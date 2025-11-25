@@ -1,10 +1,10 @@
 package org.app.facturacion.infrastructure.interceptor;
 
 import java.util.List;
-import java.io.IOException;
 
-import org.apache.coyote.BadRequestException;
+import org.app.facturacion.domain.exceptions.ValidationException;
 import org.springframework.stereotype.Component;
+import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.servlet.HandlerInterceptor;
@@ -23,22 +23,26 @@ public class FileUploadInterceptor implements HandlerInterceptor {
   @Override
   public boolean preHandle(HttpServletRequest request,
       HttpServletResponse response,
-      Object handler) throws IOException {
+      Object handler) {
+    try {
 
-    if (request instanceof MultipartHttpServletRequest multipartRequest) {
+      if (request instanceof MultipartHttpServletRequest multipartRequest) {
 
-      MultipartFile file = multipartRequest.getFile("file");
+        MultipartFile file = multipartRequest.getFile("file");
 
-      if (file == null || file.isEmpty()) {
-        throw new BadRequestException("No se subió ningun archivo");
+        if (file == null || file.isEmpty()) {
+          throw new ValidationException("No se subió ningun archivo");
+        }
+
+        if (!ALLOWED_TYPES.contains(file.getContentType())) {
+          String fileContentType = file.getContentType();
+          throw new ValidationException("Formato de archivo no permitido: " + fileContentType);
+        }
+
       }
-
-      if (!ALLOWED_TYPES.contains(file.getContentType())) {
-        String fileContentType = file.getContentType();
-        throw new BadRequestException("Formato de archivo no permitido: " + fileContentType);
-      }
+    } catch (MultipartException e) {
+      throw new ValidationException("Error en el formato de la petición con archivo");
     }
-
     return true;
   }
 

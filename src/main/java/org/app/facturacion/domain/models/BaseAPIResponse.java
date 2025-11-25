@@ -1,19 +1,31 @@
 package org.app.facturacion.domain.models;
 
-import jakarta.annotation.Nonnull;
-import jakarta.annotation.Nullable;
+import java.util.List;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
-import lombok.Setter;
+import lombok.NoArgsConstructor;
 
-@Setter
 @Getter
 @AllArgsConstructor
+@NoArgsConstructor(force = true)
 public class BaseAPIResponse<T> {
 
-  @Nonnull
-  private String message;
+  private final ApiStatus status;
+  private final String message;
+  private final T data;
+  private final List<String> warnings;
 
-  @Nullable
-  private T data;
+  public static <T> BaseAPIResponse<T> success(String message, T data) {
+    return new BaseAPIResponse<>(ApiStatus.SUCCESS, message, data, null);
+  }
+
+  public static <T> BaseAPIResponse<T> warning(String message, T data, List<String> warnings) {
+    return new BaseAPIResponse<>(ApiStatus.WARNING, message, data, warnings);
+  }
+
+  public static <T> BaseAPIResponse<T> error(String message) {
+    return new BaseAPIResponse<>(ApiStatus.ERROR, message, null, null);
+  }
+
 }
