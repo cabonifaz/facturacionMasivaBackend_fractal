@@ -2,6 +2,8 @@ package org.app.facturacion.domain.models;
 
 import java.util.List;
 
+import org.eclipse.jdt.annotation.Nullable;
+
 import lombok.AllArgsConstructor;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
@@ -12,8 +14,13 @@ import lombok.NoArgsConstructor;
 public class BaseAPIResponse<T> {
 
   private final ApiStatus status;
+
   private final String message;
+
+  @Nullable
   private final T data;
+
+  @Nullable
   private final List<String> warnings;
 
   public static <T> BaseAPIResponse<T> success(String message, T data) {
