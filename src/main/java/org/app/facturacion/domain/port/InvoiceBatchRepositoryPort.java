@@ -7,7 +7,20 @@ import org.eclipse.jdt.annotation.NonNull;
 
 public interface InvoiceBatchRepositoryPort {
 
+  /**
+   * Procesa la carga de trabajo
+   * 
+   * @return retorna el código de carga de los datos procesados
+   */
   String addOrUpdateInvoiceWorkspace(
       List<InvoiceRow> invoices,
       @NonNull String username);
+
+  /**
+   * Genera el detalle de facturación para una carga de trabajo
+   * 
+   * @param workloadId ID de la carga de trabajo
+   * @return Retorna true si se generan los detalles para la carga de trabajo
+   */
+  Boolean createDetailsForWorkload(@NonNull String workload, @NonNull String username);
 }

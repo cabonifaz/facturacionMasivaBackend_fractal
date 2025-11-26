@@ -2,10 +2,12 @@ package org.app.facturacion.infrastructure.controller;
 
 import org.app.facturacion.application.services.InvoiceBatchService;
 import org.app.facturacion.domain.models.BaseAPIResponse;
+import org.app.facturacion.domain.models.Workload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -34,6 +36,15 @@ public class InvoiceBatchController {
     logger.info("ContentType: {}", file.getContentType());
 
     BaseAPIResponse<String> response = this.service.processInvoceBatchFile(file);
-    return BaseAPIResponse.success("Datos procesados correctamente", response.getData());
+    return BaseAPIResponse.success(response.getMessage(), response.getData());
   }
+
+  @PostMapping("/create-details")
+  public BaseAPIResponse<Boolean> createDetailsForWorkLoad(
+      @RequestBody() Workload workload) {
+
+    BaseAPIResponse<Boolean> response = this.service.createDetailsForWorkLoad(workload.getWorkloadId());
+    return BaseAPIResponse.success(response.getMessage(), response.getData());
+  }
+
 }

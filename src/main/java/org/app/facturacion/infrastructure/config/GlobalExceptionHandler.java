@@ -17,23 +17,29 @@ public class GlobalExceptionHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
+  @SuppressWarnings("null")
   @ExceptionHandler(SystemAPIException.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public BaseAPIResponse<?> handleSystemException(SystemAPIException e) {
-    return BaseAPIResponse.error(e.getMessage());
+    String msg = e.getMessage() == null ? "No se determino el motivo del error" : e.getMessage();
+    return BaseAPIResponse.error(msg);
   }
 
+  @SuppressWarnings("null")
   @ExceptionHandler(ValidationAPIException.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
   public BaseAPIResponse<?> handleValidationException(ValidationAPIException e) {
-    return BaseAPIResponse.error(e.getMessage());
+    String msg = e.getMessage() == null ? "No se determino el motivo del error" : e.getMessage();
+    return BaseAPIResponse.error(msg);
   }
 
+  @SuppressWarnings("null")
   @ExceptionHandler(ResponseStatusException.class)
   @ResponseStatus(HttpStatus.BAD_REQUEST)
   public BaseAPIResponse<?> handleResponseStatus(ResponseStatusException e) {
-    logger.warn("Bad Request: ", e);
-    return BaseAPIResponse.error(e.getReason());
+    String msg = e.getMessage() == null ? "No se determino el motivo del error" : e.getMessage();
+    logger.warn("Bad Request: ", msg);
+    return BaseAPIResponse.error(msg);
   }
 
   @ExceptionHandler(Exception.class)

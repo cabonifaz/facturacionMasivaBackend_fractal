@@ -24,11 +24,9 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
   private Logger logger = LoggerFactory.getLogger(this.getClass());
 
   private final JdbcTemplate jdbcTemplate;
-  private final SimpleJdbcCall simpleJdbcCall;
 
   public InvoiceBatchRepository(JdbcTemplate jdbcTemplate) {
     this.jdbcTemplate = jdbcTemplate;
-    this.simpleJdbcCall = new SimpleJdbcCall(this.jdbcTemplate);
   }
 
   @Override
@@ -37,12 +35,14 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
 
     final String SP_NAME = "SPP_FACTURACION_TRABAJO_INS";
     this.logger.debug("Calling to SP: {}", SP_NAME);
+
+    SimpleJdbcCall jSimpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
+    jSimpleJdbcCall.withProcedureName(SP_NAME);
+
     try {
       SQLServerDataTable tvpData = createTvpFromList(facturas);
 
-      this.simpleJdbcCall.withProcedureName(SP_NAME);
-
-      Map<String, Object> result = this.simpleJdbcCall.execute(
+      Map<String, Object> result = jSimpleJdbcCall.execute(
           1,
           username,
           1,
@@ -131,6 +131,47 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
     }
 
     return tvp;
+  }
+
+  @Override
+  public Boolean createDetailsForWorkload(@NonNull String workload, @NonNull String username) {
+
+    this.logger.info("Creating details for workload: {}", workload);
+
+    final String SP_NAME = "SPP_FACTURA_DETALLE_INS_BATCH";
+    SimpleJdbcCall jSimpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
+    jSimpleJdbcCall.withProcedureName(SP_NAME);
+
+    this.logger.debug("Calling to SP: {}", SP_NAME);
+
+    Map<String, Object> result = jSimpleJdbcCall.execute(
+        1,
+        username,
+        1,
+        workload);
+
+    this.logger.debug("Data from DB: {}", result);
+
+    if (result == null || result.isEmpty())
+      throw new SystemAPIException("No hubo respuesta de la base de datos", null);
+
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> responseList = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
+        Collections.emptyList());
+
+    if (responseList.isEmpty())
+      throw new SystemAPIException("No hubo respuesta de la base de datos", null);
+
+    Map<String, Object> responseMap = responseList.get(0);
+
+    Integer idMessage = (Integer) responseMap.getOrDefault("ID_TIPO_MENSAJE", 3);
+    String message = (String) responseMap.getOrDefault("MENSAJE", "Sin mensaje de error de la DB");
+
+    if (idMessage != 2)
+      throw new SystemAPIException(message, null);
+
+    return true;
+
   }
 
 }
