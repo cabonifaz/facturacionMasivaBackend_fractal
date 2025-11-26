@@ -1,7 +1,7 @@
 package org.app.facturacion.infrastructure.config;
 
-import org.app.facturacion.domain.exceptions.SystemException;
-import org.app.facturacion.domain.exceptions.ValidationException;
+import org.app.facturacion.domain.exceptions.SystemAPIException;
+import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -17,15 +17,15 @@ public class GlobalExceptionHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
 
-  @ExceptionHandler(SystemException.class)
+  @ExceptionHandler(SystemAPIException.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-  public BaseAPIResponse<?> handleSystemException(SystemException e) {
+  public BaseAPIResponse<?> handleSystemException(SystemAPIException e) {
     return BaseAPIResponse.error(e.getMessage());
   }
 
-  @ExceptionHandler(ValidationException.class)
+  @ExceptionHandler(ValidationAPIException.class)
   @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
-  public BaseAPIResponse<?> handleValidationException(ValidationException e) {
+  public BaseAPIResponse<?> handleValidationException(ValidationAPIException e) {
     return BaseAPIResponse.error(e.getMessage());
   }
 

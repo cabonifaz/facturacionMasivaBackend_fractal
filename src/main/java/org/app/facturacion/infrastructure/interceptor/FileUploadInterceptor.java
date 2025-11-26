@@ -2,7 +2,7 @@ package org.app.facturacion.infrastructure.interceptor;
 
 import java.util.List;
 
-import org.app.facturacion.domain.exceptions.ValidationException;
+import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartException;
 import org.springframework.web.multipart.MultipartFile;
@@ -31,17 +31,17 @@ public class FileUploadInterceptor implements HandlerInterceptor {
         MultipartFile file = multipartRequest.getFile("file");
 
         if (file == null || file.isEmpty()) {
-          throw new ValidationException("No se subió ningun archivo");
+          throw new ValidationAPIException("No se subió ningun archivo");
         }
 
         if (!ALLOWED_TYPES.contains(file.getContentType())) {
           String fileContentType = file.getContentType();
-          throw new ValidationException("Formato de archivo no permitido: " + fileContentType);
+          throw new ValidationAPIException("Formato de archivo no permitido: " + fileContentType);
         }
 
       }
     } catch (MultipartException e) {
-      throw new ValidationException("Error en el formato de la petición con archivo");
+      throw new ValidationAPIException("Error en el formato de la petición con archivo");
     }
     return true;
   }

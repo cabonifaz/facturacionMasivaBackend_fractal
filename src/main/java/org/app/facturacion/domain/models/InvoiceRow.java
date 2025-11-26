@@ -4,6 +4,8 @@ import lombok.Data;
 
 @Data
 public class InvoiceRow {
+  private Integer id;
+  private String workloadId;
   private String clientName;
   private String analytic;
   private String ocOs;
@@ -18,4 +20,5 @@ public class InvoiceRow {
   private Double totalAmount;
   private String contact;
   private String invoiceNumber;
+  private boolean isEdited;
 }

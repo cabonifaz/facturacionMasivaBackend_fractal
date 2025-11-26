@@ -1,10 +1,7 @@
 package org.app.facturacion.infrastructure.controller;
 
-import java.util.List;
-
-import org.app.facturacion.application.services.ExcelReaderService;
+import org.app.facturacion.application.services.InvoiceBatchService;
 import org.app.facturacion.domain.models.BaseAPIResponse;
-import org.app.facturacion.domain.models.InvoiceRow;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.validation.annotation.Validated;
@@ -21,22 +18,22 @@ public class InvoiceBatchController {
 
   private Logger logger = LoggerFactory.getLogger(InvoiceBatchController.class);
 
-  private final ExcelReaderService excelReaderService;
+  private final InvoiceBatchService service;
 
-  public InvoiceBatchController(ExcelReaderService service) {
-    this.excelReaderService = service;
+  public InvoiceBatchController(InvoiceBatchService service) {
+    this.service = service;
   }
 
   @PostMapping("/upload-batch")
-  public BaseAPIResponse<List<InvoiceRow>> processSheetFile(
+  public BaseAPIResponse<String> processSheetFile(
       @RequestParam("file") MultipartFile file) {
-    logger.info("File param name: {}", file.getName());
+
+    logger.info("Processing file...");
     logger.info("Original filename: {}", file.getOriginalFilename());
     logger.info("Size: {}", file.getSize());
     logger.info("ContentType: {}", file.getContentType());
-    ;
-    List<InvoiceRow> rows = this.excelReaderService.readInvoiceSheet(file);
 
-    return BaseAPIResponse.success("Datos procesados correctamente", rows);
+    BaseAPIResponse<String> response = this.service.processInvoceBatchFile(file);
+    return BaseAPIResponse.success("Datos procesados correctamente", response.getData());
   }
 }
