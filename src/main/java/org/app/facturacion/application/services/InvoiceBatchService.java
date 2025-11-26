@@ -4,13 +4,13 @@ import java.util.List;
 
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
+import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.InvoiceRow;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.app.facturacion.infrastructure.mappers.ExcelReader;
 import org.app.facturacion.infrastructure.repositories.InvoiceBatchRepository;
 import org.eclipse.jdt.annotation.NonNull;
 import org.springframework.stereotype.Service;
-import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
@@ -46,7 +46,6 @@ public class InvoiceBatchService {
    * @param workloadId ID de la carga de trabajo
    * @return Retorna true si se generan los detalles para la carga de trabajo
    */
-  @PostMapping("create-details")
   public BaseAPIResponse<Boolean> createDetailsForWorkLoad(String workloadId) {
 
     if (workloadId == null)
@@ -55,6 +54,13 @@ public class InvoiceBatchService {
     Boolean response = this.repository.createDetailsForWorkload(workloadId, "system-user");
 
     return BaseAPIResponse.success("Detalles generados correctamente", response);
+  }
+
+  public BaseAPIResponse<Boolean> pregenerateHeaders(@NonNull InvoicePreGenerate rGenerate) {
+
+    Boolean response = this.repository.pregenerateInvoices(rGenerate, "system-user");
+
+    return BaseAPIResponse.success("Datos pregenerados correctamente", response);
   }
 
 }

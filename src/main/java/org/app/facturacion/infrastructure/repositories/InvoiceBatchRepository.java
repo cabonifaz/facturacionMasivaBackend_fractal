@@ -6,6 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
+import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.InvoiceRow;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.eclipse.jdt.annotation.NonNull;
@@ -172,6 +173,44 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
 
     return true;
 
+  }
+
+  @Override
+  public Boolean pregenerateInvoices(@NonNull InvoicePreGenerate reqGenerate, @NonNull String username) {
+
+    this.logger.info("Pre-generate for workload: {}", reqGenerate.getWorkload());
+
+    final String SP_NAME = "SPP_FACTURA_HISTORIAL_GEN";
+    SimpleJdbcCall jSimpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
+    jSimpleJdbcCall.withProcedureName(SP_NAME);
+
+    this.logger.debug("Calling to SP: {}", SP_NAME);
+
+    Map<String, Object> result = jSimpleJdbcCall.execute(
+        username,
+        reqGenerate.getWorkload());
+
+    this.logger.debug("Data from DB: {}", result);
+
+    if (result == null || result.isEmpty())
+      throw new SystemAPIException("No hubo respuesta de la base de datos", null);
+
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> responseList = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
+        Collections.emptyList());
+
+    if (responseList.isEmpty())
+      throw new SystemAPIException("No hubo respuesta de la base de datos", null);
+
+    Map<String, Object> responseMap = responseList.get(0);
+
+    Integer idMessage = (Integer) responseMap.getOrDefault("ID_TIPO_MENSAJE", 3);
+    String message = (String) responseMap.getOrDefault("MENSAJE", "Sin mensaje de error de la DB");
+
+    if (idMessage != 2)
+      throw new SystemAPIException(message, null);
+
+    return true;
   }
 
 }
