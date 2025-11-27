@@ -61,4 +61,16 @@ public class InvoiceBatchController {
     return BaseAPIResponse.success(rs.getMessage(), rs.getData());
   }
 
+  @PostMapping("/create-invoices")
+
+  public BaseAPIResponse<String> generateInvoices(
+      @RequestBody @NonNull Workload request) {
+
+    this.logger.info("Generating Invoices for: {}", request.getWorkloadId());
+
+    BaseAPIResponse<String> rs = this.service.generateInvoices(request.getWorkloadId());
+
+    return BaseAPIResponse.success("Datos procesados correctamente", rs.getData());
+  }
+
 }
