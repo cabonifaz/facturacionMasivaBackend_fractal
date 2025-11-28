@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.models.InvoiceHistoryDetails;
+import org.app.facturacion.infrastructure.api.adapter.bsale.dto.BsaleDocumentDetailDTO;
 import org.app.facturacion.infrastructure.api.dto.BsaleApiInvoiceRequestDTO;
 import org.app.facturacion.infrastructure.api.dto.BsaleInvoiceResponseDTO;
 import org.eclipse.jdt.annotation.NonNull;
@@ -42,6 +43,104 @@ public class BsaleApiAdapter {
     this.restTemplate = restTemplate;
     this.bsaleApiUrl = externalApiUrl;
     this.bsaleToken = bsaleToken;
+  }
+
+  /**
+   * Descarga el PDF binario de una factura específica desde Bsale.
+   * 
+   * @param documentId El ID numérico del documento en Bsale (ej: 55070).
+   * @return El archivo PDF como un array de bytes (byte[]).
+   */
+  public BsaleDocumentDetailDTO getDocumentInvoiceDetails(Long documentId) {
+
+    String fullUrl = bsaleApiUrl + API_VERSION + "/documents/" + documentId + ".json";
+    this.logger.info("Getting details from: {}", fullUrl);
+
+    // Basic Auth
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("access_token", this.bsaleToken);
+    headers.setAccept(List.of(MediaType.APPLICATION_JSON));
+
+    HttpEntity<String> entity = new HttpEntity<>(null, headers);
+
+    try {
+      ResponseEntity<@NonNull BsaleDocumentDetailDTO> response = restTemplate.exchange(
+          fullUrl,
+          HttpMethod.GET,
+          entity,
+          BsaleDocumentDetailDTO.class);
+
+      if (response.getStatusCode().is2xxSuccessful() && response.hasBody()) {
+        this.logger.info("Process completed: {}", documentId);
+        return response.getBody();
+      }
+
+      this.logger.error("Error getting details for document ID {}. Status: {}", documentId, response.getStatusCode());
+
+      throw new SystemAPIException(
+          "No se pudo obtener detalles del documento de Bsale. Código HTTP: " + response.getStatusCode(),
+          null);
+
+    } catch (RestClientException e) {
+      this.logger.error("Communication error during getting document details", e);
+      throw new SystemAPIException("Error de comunicación al obtener detalles del documento.", e);
+    }
+  }
+
+  public byte[] downloadBsaleDocument(@NonNull String url) {
+
+    HttpHeaders headers = new HttpHeaders();
+    headers.set("User-Agent", "Mozilla/5.0 ");
+
+    HttpEntity<Void> entity = new HttpEntity<>(headers);
+
+    this.logger.info("Downloading document from: {}", url);
+
+    int maxRetries = 5;
+    int retryDelayMs = 2000;
+
+    for (int attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        this.logger.debug("Attemp {} of {} to download from: {}", attempt, maxRetries, url);
+
+        ResponseEntity<byte[]> response = restTemplate.exchange(
+            url,
+            HttpMethod.GET,
+            entity,
+            byte[].class);
+
+        // Validar éxito HTTP y que el cuerpo no sea nulo
+        if (response.getStatusCode().is2xxSuccessful() && response.getBody() != null) {
+          byte[] fileContent = response.getBody();
+
+          if (fileContent.length > 0) {
+            return fileContent;
+          } else {
+            this.logger.warn("Intento {}: Descarga exitosa (200 OK) pero el archivo tiene 0 bytes. Reintentando...",
+                attempt);
+          }
+        } else if (response.getStatusCode().is3xxRedirection()) {
+          this.logger.info("Redirección detectada en intento {}", attempt);
+        }
+
+      } catch (RestClientException e) {
+        this.logger.warn("Error de comunicación en intento {}: {}", attempt, e.getMessage());
+      }
+
+      // Si no fue el último intento, esperamos antes de reintentar
+      if (attempt < maxRetries) {
+        try {
+          Thread.sleep(retryDelayMs);
+        } catch (InterruptedException ie) {
+          Thread.currentThread().interrupt();
+          throw new SystemAPIException("El hilo fue interrumpido durante la espera de reintento", ie);
+        }
+      }
+    }
+
+    this.logger.error("Fallo definitivo al descargar PDF tras {} intentos desde {}", maxRetries, url);
+    throw new SystemAPIException(
+        "Error al descargar el PDF: Archivo vacío o error de conexión tras múltiples intentos.", null);
   }
 
   public BsaleInvoiceResponseDTO createExternalInvoice(@NonNull BsaleApiInvoiceRequestDTO request) {
@@ -99,6 +198,7 @@ public class BsaleApiAdapter {
 
     // 2. Mapeo de Detalles
     List<BsaleDetail> details = new ArrayList<>();
+    @SuppressWarnings("unused")
     double totalAmount = 0.0;
 
     for (InvoiceHistoryDetails d : source.getDetails()) {
