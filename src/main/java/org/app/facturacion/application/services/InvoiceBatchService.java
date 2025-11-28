@@ -10,6 +10,7 @@ import org.app.facturacion.domain.models.InvoiceRow;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.app.facturacion.domain.port.InvoiceHistoryRepositoryPort;
 import org.app.facturacion.infrastructure.api.adapter.BsaleApiAdapter;
+import org.app.facturacion.infrastructure.api.adapter.N8NAdapter;
 import org.app.facturacion.infrastructure.api.dto.BsaleApiInvoiceRequestDTO;
 import org.app.facturacion.infrastructure.api.dto.BsaleInvoiceResponseDTO;
 import org.app.facturacion.infrastructure.mappers.ExcelReader;
@@ -27,11 +28,14 @@ public class InvoiceBatchService {
   private final InvoiceBatchRepositoryPort repository;
   private final BsaleApiAdapter bsaleApiAdapter;
   private final InvoiceHistoryRepositoryPort invoiceHisRp;
+  private final N8NAdapter n8nAdapter;
 
-  public InvoiceBatchService(InvoiceBatchRepository repo, BsaleApiAdapter adapter, InvoiceHistoryRepositoryPort rp) {
+  public InvoiceBatchService(InvoiceBatchRepository repo, BsaleApiAdapter adapter, InvoiceHistoryRepositoryPort rp,
+      N8NAdapter n8nAdapter) {
     this.repository = repo;
     this.bsaleApiAdapter = adapter;
     this.invoiceHisRp = rp;
+    this.n8nAdapter = n8nAdapter;
   }
 
   /**
@@ -123,6 +127,8 @@ public class InvoiceBatchService {
 
     this.logger.info("Invoices generated: {}", invoices.size());
 
+    // Call n8n web hook to create excel report
+    this.n8nAdapter.callCreateExcelHook(workload);
     return BaseAPIResponse.success(message, message);
   }
 

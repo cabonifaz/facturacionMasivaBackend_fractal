@@ -60,6 +60,7 @@ public class BsaleApiAdapter {
     try {
       String fullUrl = bsaleApiUrl + API_VERSION + "/documents.json";
 
+      @SuppressWarnings("null")
       ResponseEntity<BsaleInvoiceResponseDTO> response = restTemplate.exchange(
           fullUrl,
           HttpMethod.POST,
