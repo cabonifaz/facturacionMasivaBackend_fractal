@@ -180,7 +180,7 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
 
     this.logger.info("Pre-generate for workload: {}", reqGenerate.getWorkload());
 
-    final String SP_NAME = "SPP_FACTURA_HISTORIAL_GEN";
+    final String SP_NAME = "SPP_FACTURA_CABECERA_GEN";
     SimpleJdbcCall jSimpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
     jSimpleJdbcCall.withProcedureName(SP_NAME);
 
