@@ -8,9 +8,12 @@ import org.apache.poi.ss.usermodel.CellType;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.app.facturacion.domain.models.InvoiceRow;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class SheetRowMapper {
 
+  private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final Integer clientNameCol = 0;
   private final Integer analyticCol = 1;
   private final Integer ocOsCol = 2;
@@ -30,28 +33,44 @@ public class SheetRowMapper {
 
     for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
       Row row = sheet.getRow(rowIndex);
+
+      // 1. Validación básica de fila nula
       if (row == null)
+        continue;
+
+      // 2. Validación de Fila Vacía
+      if (isCellEmpty(row.getCell(this.clientNameCol)))
         continue;
 
       InvoiceRow data = new InvoiceRow();
 
-      data.setClientName(getCellString(row.getCell(this.clientNameCol)));
-      data.setAnalytic(getCellString(row.getCell(this.analyticCol)));
-      data.setOcOs(getCellString(row.getCell(this.ocOsCol)));
-      data.setNiCs(getCellInteger(row.getCell(this.niCsCol)));
-      data.setCollaborator(getCellString(row.getCell(this.collaboratorCol)));
-      data.setStartDate(getCellString(row.getCell(this.startDateCol)));
-      data.setEndDate(getCellString(row.getCell(this.endDateCol)));
-      data.setConcept(getCellString(row.getCell(this.conceptCol)));
-      data.setCurrency(getCellString(row.getCell(this.currencyCol)));
-      data.setAmount(getCellDouble(row.getCell(this.amountCol)));
-      data.setIgv(getCellDouble(row.getCell(this.igvCol)));
-      data.setTotalAmount(getCellDouble(row.getCell(this.totalAmountCol)));
-      data.setContact(getCellString(row.getCell(this.contactCol)));
+      try {
+        data.setClientName(getCellString(row.getCell(this.clientNameCol)));
+        data.setAnalytic(getCellString(row.getCell(this.analyticCol)));
+        data.setOcOs(getCellString(row.getCell(this.ocOsCol)));
+        data.setNiCs(getCellInteger(row.getCell(this.niCsCol)));
+        data.setCollaborator(getCellString(row.getCell(this.collaboratorCol)));
+        data.setStartDate(getCellString(row.getCell(this.startDateCol)));
+        data.setEndDate(getCellString(row.getCell(this.endDateCol)));
+        data.setConcept(getCellString(row.getCell(this.conceptCol)));
+        data.setCurrency(getCellString(row.getCell(this.currencyCol)));
+        data.setAmount(getCellDouble(row.getCell(this.amountCol)));
+        data.setIgv(getCellDouble(row.getCell(this.igvCol)));
+        data.setTotalAmount(getCellDouble(row.getCell(this.totalAmountCol)));
+        data.setContact(getCellString(row.getCell(this.contactCol)));
 
-      rows.add(data);
+        rows.add(data);
+        this.logger.info("Row: {} successfuly processed", rowIndex);
+      } catch (Exception e) {
+        this.logger.error("Error procesando fila {}: {}", rowIndex, e.getMessage());
+      }
     }
     return rows;
+  }
+
+  private boolean isCellEmpty(Cell cell) {
+    return cell == null || cell.getCellType() == CellType.BLANK ||
+        (cell.getCellType() == CellType.STRING && cell.getStringCellValue().trim().isEmpty());
   }
 
   private String getCellString(Cell cell) {

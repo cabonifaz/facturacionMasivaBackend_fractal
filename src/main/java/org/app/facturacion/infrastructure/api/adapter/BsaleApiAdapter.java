@@ -261,16 +261,27 @@ public class BsaleApiAdapter {
     client.put("district", source.getDistrict());
     client.put("city", source.getCity());
     client.put("province", source.getProvince());
-    client.put("activity", source.getActivity());
+    // client.put("activity", source.getActivity());
 
     root.put("client", client);
     root.put("details", detailsList);
     root.put("payments", paymentsList);
 
-    // Atributo dinámico de OC en la cabecera
-    root.put("dynamicAttributes", Collections.singletonList(Map.of(
+    List<Map<String, Object>> dynAttributesList = new ArrayList<>();
+
+    // 1. Atributo OC
+    dynAttributesList.add(Map.of(
         "description", source.getObservation(),
-        "dynamicAttributeId", this.invoiceConfig.getDynamicAttributeOcId())));
+        "dynamicAttributeId", this.invoiceConfig.getDynamicAttributeOcId()));
+
+    // 2. Atributo de tipo factura
+    // Refactorizar para traer desde variables de entorno
+    dynAttributesList.add(Map.of(
+        "description", "7428",
+        "dynamicAttributeId", 66));
+
+    // Asignamos la lista completa
+    root.put("dynamicAttributes", dynAttributesList);
 
     return root;
   }
@@ -297,11 +308,6 @@ public class BsaleApiAdapter {
     contactDetails.add(buildContactDetail(
         this.invoiceConfig.getDetraction().getServiceCode().getFormId(),
         this.invoiceConfig.getDetraction().getServiceCode().getValueId()));
-
-    // Tipo de operación
-    contactDetails.add(buildContactDetail(
-        this.invoiceConfig.getDetraction().getOperationType().getFormId(),
-        this.invoiceConfig.getDetraction().getOperationType().getValueId()));
 
     payment.put("contactDetails", contactDetails);
     return payment;

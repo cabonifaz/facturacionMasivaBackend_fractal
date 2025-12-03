@@ -102,7 +102,8 @@ public class InvoiceHeaderRepository implements InvoiceHistoryRepositoryPort {
 
           // Mapeo básico
           detail.setOrderNumber(detailOrderNum);
-          detail.setConcept((String) detailRow.get("CONCEPTO"));
+          // Concatenar casteo de order + concept -> migrar a base de datos
+          detail.setConcept((String) detailRow.get("CONCEPTO") + " " + history.getObservation());
           detail.setIncomingNumber((Integer) detailRow.get("NUM_NOTA_INGRESO"));
           detail.setQuantity((Integer) detailRow.get("CANTIDAD"));
 
