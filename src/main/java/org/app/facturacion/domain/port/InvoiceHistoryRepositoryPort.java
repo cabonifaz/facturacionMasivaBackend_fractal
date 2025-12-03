@@ -2,7 +2,7 @@ package org.app.facturacion.domain.port;
 
 import java.util.List;
 
-import org.app.facturacion.domain.models.InvoiceHistory;
+import org.app.facturacion.domain.models.InvoiceHeader;
 import org.eclipse.jdt.annotation.NonNull;
 
 public interface InvoiceHistoryRepositoryPort {
@@ -14,7 +14,7 @@ public interface InvoiceHistoryRepositoryPort {
    * @param workload El ID del bloque de trabajo.
    * @return Lista de
    */
-  List<InvoiceHistory> findPendingInvoicesByWorkload(@NonNull String workload);
+  List<InvoiceHeader> findPendingInvoicesByWorkload(@NonNull String workload);
 
   /**
    * Actualiza el historial con los datos de la factura generada

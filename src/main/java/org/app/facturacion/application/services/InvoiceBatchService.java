@@ -4,7 +4,7 @@ import java.util.List;
 
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
-import org.app.facturacion.domain.models.InvoiceHistory;
+import org.app.facturacion.domain.models.InvoiceHeader;
 import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.InvoiceRow;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
@@ -88,7 +88,7 @@ public class InvoiceBatchService {
   @SuppressWarnings("null")
   public BaseAPIResponse<String> generateInvoices(@NonNull String workload) {
 
-    List<InvoiceHistory> invoices = this.invoiceHisRp.findPendingInvoicesByWorkload(workload);
+    List<InvoiceHeader> invoices = this.invoiceHisRp.findPendingInvoicesByWorkload(workload);
 
     if (invoices.isEmpty()) {
       this.logger.warn("Not pending invoices for: {}", workload);
@@ -99,7 +99,7 @@ public class InvoiceBatchService {
 
     int successfulCount = 0;
 
-    for (InvoiceHistory invoice : invoices) {
+    for (InvoiceHeader invoice : invoices) {
       try {
         BsaleApiInvoiceRequestDTO request = mapToApiRequest(invoice);
         this.logger.debug("Request to Bsale: {}", request);
@@ -132,19 +132,16 @@ public class InvoiceBatchService {
     return BaseAPIResponse.success(message, message);
   }
 
-  private @NonNull BsaleApiInvoiceRequestDTO mapToApiRequest(InvoiceHistory invoice) {
+  private @NonNull BsaleApiInvoiceRequestDTO mapToApiRequest(InvoiceHeader invoice) {
     BsaleApiInvoiceRequestDTO dto = new BsaleApiInvoiceRequestDTO();
     dto.setCode(invoice.getClientCode());
     dto.setAddress(invoice.getClientAddress());
     dto.setDistrict(invoice.getClientDistrict());
     dto.setCity(invoice.getClientCity());
-    dto.setCompany("");
     dto.setActivity(invoice.getClientActivity());
-    dto.setBankAccount("");
     dto.setObservation(invoice.getObservation());
-    // dto.setPaymentMethod(invoice.getTipoPago());
-    dto.setPaymentId(1);
     dto.setDetails(invoice.getDetails());
+    dto.setProvince(invoice.getClientProvince());
     return dto;
   }
 

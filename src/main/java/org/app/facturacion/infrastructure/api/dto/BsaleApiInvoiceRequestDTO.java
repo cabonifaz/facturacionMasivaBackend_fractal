@@ -11,25 +11,15 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class BsaleApiInvoiceRequestDTO {
 
-  private final Integer documentTypeId = 85;
-
   private String code; // Mapear el RUC del cliente
   private String observation;
-  private String address; // Mapea a DIRECCION_CLIENTE
+  private String address;
+  private String district;
+  private String city;
+  private String province;
 
-  private String district; // Mapea a DISTRITO_CLIENTE
-
-  private String city; // Mapea a CIUDAD_CLIENTE
-
-  private String company; // Mapea a NOMBRE_CLIENTE
-
-  private String activity; // Mapea a ACTIVIDAD_CLIENTE
-
-  private String bankAccount; // Mapea a CUENTA_BANCO
-
-  private String paymentMethod; // Mapea a TIPO_PAGO
-
-  private Integer paymentId; // Mapea a ID_TIPO_PAGO
+  private String company;
+  private String activity;
 
   private List<InvoiceHistoryDetails> details;
 

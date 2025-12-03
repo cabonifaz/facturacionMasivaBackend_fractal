@@ -6,7 +6,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
-import org.app.facturacion.domain.models.InvoiceHistory;
+import org.app.facturacion.domain.models.InvoiceHeader;
 import org.app.facturacion.domain.models.InvoiceHistoryDetails;
 import org.app.facturacion.domain.port.InvoiceHistoryRepositoryPort;
 import org.eclipse.jdt.annotation.NonNull;
@@ -18,17 +18,17 @@ import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 
 @Repository
-public class InvoiceHistoryRepository implements InvoiceHistoryRepositoryPort {
+public class InvoiceHeaderRepository implements InvoiceHistoryRepositoryPort {
 
   private Logger logger = LoggerFactory.getLogger(getClass());
   private final JdbcTemplate jdbcTemplate;
 
-  public InvoiceHistoryRepository(JdbcTemplate jTemplate) {
+  public InvoiceHeaderRepository(JdbcTemplate jTemplate) {
     this.jdbcTemplate = jTemplate;
   }
 
   @Override
-  public List<InvoiceHistory> findPendingInvoicesByWorkload(@NonNull String workload) {
+  public List<InvoiceHeader> findPendingInvoicesByWorkload(@NonNull String workload) {
 
     this.logger.info("Getting pending invoices for workload: {}", workload);
 
@@ -69,12 +69,12 @@ public class InvoiceHistoryRepository implements InvoiceHistoryRepositoryPort {
     if (idMessage != 2)
       throw new SystemAPIException(message, null);
 
-    List<InvoiceHistory> invoices = new ArrayList<>();
+    List<InvoiceHeader> invoices = new ArrayList<>();
 
     // 4. Iterar Cabeceras
     for (Map<String, Object> invoiceRow : invoicesList) {
 
-      InvoiceHistory history = new InvoiceHistory();
+      InvoiceHeader history = new InvoiceHeader();
 
       // Mapeo de cabecera
       history.setWorkload((String) invoiceRow.get("CODIGO_CARGA"));
@@ -84,6 +84,7 @@ public class InvoiceHistoryRepository implements InvoiceHistoryRepositoryPort {
       history.setClientCity((String) invoiceRow.get("CIUDAD_CLIENTE"));
       history.setClientCode((String) invoiceRow.get("CODIGO_CLIENTE"));
       history.setClientActivity((String) invoiceRow.get("ACTIVIDAD_CLIENTE"));
+      history.setClientProvince((String) invoiceRow.get("PROVINCIA_CLIENTE"));
       history.setHistoryId((Integer) invoiceRow.get("ID"));
       history.setState((Integer) invoiceRow.get("ID_ESTADO_REGISTRO"));
 
@@ -101,7 +102,7 @@ public class InvoiceHistoryRepository implements InvoiceHistoryRepositoryPort {
 
           // Mapeo básico
           detail.setOrderNumber(detailOrderNum);
-          detail.setConcept((String) detailRow.get("CONCEPTO") + " " + history.getObservation());
+          detail.setConcept((String) detailRow.get("CONCEPTO"));
           detail.setIncomingNumber((Integer) detailRow.get("NUM_NOTA_INGRESO"));
           detail.setQuantity((Integer) detailRow.get("CANTIDAD"));
 

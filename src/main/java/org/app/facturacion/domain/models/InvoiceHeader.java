@@ -5,7 +5,7 @@ import java.util.List;
 import lombok.Data;
 
 @Data
-public class InvoiceHistory {
+public class InvoiceHeader {
 
   private Integer historyId;
   private String clientAddress;
@@ -14,6 +14,7 @@ public class InvoiceHistory {
   private String clientCode;
   private String workload;
   private String clientActivity;
+  private String clientProvince;
   private String observation;
   private Integer orderNumber;
   private Integer state;

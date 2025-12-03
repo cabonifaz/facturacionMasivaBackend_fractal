@@ -12,6 +12,7 @@ import java.util.Map;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.models.InvoiceHistoryDetails;
+import org.app.facturacion.infrastructure.api.adapter.bsale.config.InvoiceConfig;
 import org.app.facturacion.infrastructure.api.adapter.bsale.dto.BsaleDocumentDetailDTO;
 import org.app.facturacion.infrastructure.api.dto.BsaleApiInvoiceRequestDTO;
 import org.app.facturacion.infrastructure.api.dto.BsaleInvoiceResponseDTO;
@@ -35,35 +36,19 @@ public class BsaleApiAdapter {
   private final String bsaleApiUrl;
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final String bsaleToken;
+  private final InvoiceConfig invoiceConfig;
 
   private final String API_VERSION = "/v1";
-
-  @Value("${bsale.config.office-id:1}")
-  private Integer officeId;
-
-  @Value("${bsale.config.invoice-type-id:85}")
-  private Integer invoiceDocumentTypeId;
-
-  @Value("${bsale.config.coin-id:1}")
-  private Integer coinId;
-
-  @Value("${bsale.config.tax-id:1000}")
-  private Long taxIdIgv;
-
-  @Value("${bsale.config.payment-type.due:4}")
-  private Integer paymentTypeIdDue;
-
-  @Value("${bsale.config.payment-type.detraction:20}")
-  private Integer paymentTypeIdDetraction;
 
   public BsaleApiAdapter(
       RestTemplate restTemplate,
       @Value("${bsale.api.url}") String externalApiUrl,
-      @Value("${bsale.api.token}") String bsaleToken) {
+      @Value("${bsale.api.token}") String bsaleToken, InvoiceConfig invoiceConfig) {
 
     this.restTemplate = restTemplate;
     this.bsaleApiUrl = externalApiUrl;
     this.bsaleToken = bsaleToken;
+    this.invoiceConfig = invoiceConfig;
   }
 
   /**
@@ -170,17 +155,16 @@ public class BsaleApiAdapter {
     headers.setContentType(MediaType.APPLICATION_JSON);
 
     Map<String, Object> jsonBody = mapToBsaleStructure(request);
-
-    this.logger.debug("Calling API, Request: ");
-    this.logger.debug("{}", jsonBody);
-
     HttpEntity<Map<String, Object>> entity = new HttpEntity<>(jsonBody, headers);
 
+    StringBuilder sBuilder = new StringBuilder();
+    sBuilder.append(bsaleApiUrl);
+    sBuilder.append("/v1/documents.json");
+
     try {
-      String fullUrl = bsaleApiUrl + "/v1/documents.json";
 
       ResponseEntity<@NonNull BsaleInvoiceResponseDTO> response = restTemplate.exchange(
-          fullUrl,
+          sBuilder.toString(),
           HttpMethod.POST,
           entity,
           BsaleInvoiceResponseDTO.class);
@@ -197,8 +181,8 @@ public class BsaleApiAdapter {
       this.logger.error("Communication error with Bsale API", e);
       throw new SystemAPIException("Error al comunicarse con Bsale", e);
     } catch (Exception e) {
-      this.logger.error("Communication error or JSON mapping failure with Bsale API", e);
-      throw new SystemAPIException("Error al comunicarse con Bsale o mapear respuesta.", e);
+      this.logger.error("Unknow error calling to Bsale API", e);
+      throw new SystemAPIException("Ha ocurrido un error desconocido llamando a la API de Bsale", e);
     }
   }
 
@@ -231,8 +215,8 @@ public class BsaleApiAdapter {
       detailMap.put("quantity", d.getQuantity());
       detailMap.put("comment", d.getConcept());
       detailMap.put("discount", discount);
-      // Impuesto 18% hardcodeado (IGV)
-      detailMap.put("taxes", Collections.singletonList(Map.of("code", 1000, "percentage", 18)));
+      detailMap.put("taxes", Collections.singletonList(
+          Map.of("code", this.invoiceConfig.getTaxId(), "percentage", 18)));
 
       detailsList.add(detailMap);
     }
@@ -241,43 +225,32 @@ public class BsaleApiAdapter {
     BigDecimal totalIgv = totalNeto.multiply(new BigDecimal("0.18"));
     BigDecimal totalFacturado = totalNeto.add(totalIgv).setScale(2, RoundingMode.HALF_UP);
 
-    // Lógica Detracción: Si supera 700 soles
-    BigDecimal umbralDetraccion = new BigDecimal("700.00");
     List<Map<String, Object>> paymentsList = new ArrayList<>();
 
-    if (totalFacturado.compareTo(umbralDetraccion) > 0) {
-      // --- APLICA DETRACCIÓN ---
-      BigDecimal detractionTax = new BigDecimal("0.12");
+    // --- APLICA DETRACCIÓN ---
+    BigDecimal detractionTax = new BigDecimal("0.12");
 
-      // Calculamos monto detracción
-      BigDecimal detractionAmount = totalFacturado.multiply(detractionTax).setScale(2, RoundingMode.HALF_UP);
+    // Calculamos monto detracción
+    BigDecimal detractionAmount = totalFacturado.multiply(detractionTax).setScale(2, RoundingMode.HALF_UP);
 
-      // Calculamos PRIMERA CUOTA (Total - Detracción)
-      BigDecimal firstDue = totalFacturado.subtract(detractionAmount);
+    // Calculamos PRIMERA CUOTA (Total - Detracción)
+    BigDecimal firstDue = totalFacturado.subtract(detractionAmount);
 
-      // Pago 1: Lo que paga el cliente (Primera Cuota)
-      Map<String, Object> pagoPrincipal = new HashMap<>();
-      pagoPrincipal.put("paymentTypeId", paymentTypeIdDue);
-      pagoPrincipal.put("amount", firstDue.doubleValue());
-      pagoPrincipal.put("recordDate", expirationTimestamp);
-      paymentsList.add(pagoPrincipal);
+    // Pago 1: Lo que paga el cliente (Primera Cuota)
+    Map<String, Object> pagoPrincipal = new HashMap<>();
+    pagoPrincipal.put("paymentTypeId", this.invoiceConfig.getPaymentTypes().getDue());
+    pagoPrincipal.put("amount", firstDue.doubleValue());
+    pagoPrincipal.put("recordDate", expirationTimestamp);
+    paymentsList.add(pagoPrincipal);
 
-      // Pago 2: La Detracción
-      paymentsList.add(createDetractionPayment(detractionAmount.doubleValue(), expirationTimestamp));
-
-    } else {
-      Map<String, Object> uniquePayment = new HashMap<>();
-      uniquePayment.put("paymentTypeId", paymentTypeIdDue);
-      uniquePayment.put("amount", totalFacturado.doubleValue());
-      uniquePayment.put("recordDate", expirationTimestamp);
-      paymentsList.add(uniquePayment);
-    }
+    // Pago 2: La Detracción
+    paymentsList.add(createDetractionPayment(detractionAmount.doubleValue(), expirationTimestamp));
 
     // 4. Armar el objeto raíz
     Map<String, Object> root = new HashMap<>();
-    root.put("documentTypeId", this.invoiceDocumentTypeId);
-    root.put("officeId", this.officeId);
-    root.put("coinId", this.coinId);
+    root.put("documentTypeId", this.invoiceConfig.getDocumentTypeId());
+    root.put("officeId", this.invoiceConfig.getOfficeId());
+    root.put("coinId", this.invoiceConfig.getCoinId());
     root.put("emissionDate", emissionTimestamp);
     root.put("expirationDate", expirationTimestamp);
 
@@ -297,32 +270,47 @@ public class BsaleApiAdapter {
     // Atributo dinámico de OC en la cabecera
     root.put("dynamicAttributes", Collections.singletonList(Map.of(
         "description", source.getObservation(),
-        "dynamicAttributeId", 123)));
+        "dynamicAttributeId", this.invoiceConfig.getDynamicAttributeOcId())));
 
     return root;
   }
 
   private Map<String, Object> createDetractionPayment(Double amount, Long recordDate) {
     Map<String, Object> payment = new HashMap<>();
-    payment.put("paymentTypeId", this.paymentTypeIdDetraction);
+    payment.put("paymentTypeId", this.invoiceConfig.getPaymentTypes().getDetraction());
     payment.put("amount", amount);
     payment.put("recordDate", recordDate);
 
     List<Map<String, Object>> contactDetails = new ArrayList<>();
 
-    contactDetails.add(buildContactDetail(85, 107, 107)); // Medio Pago
-    contactDetails.add(buildContactDetail(86, 117, 117)); // Nro Cuenta
-    contactDetails.add(buildContactDetail(84, 102, 102)); // Cod Bien/Srvicio
-    contactDetails.add(buildContactDetail(83, "", 1)); // Tipo Op
+    // Medio de pago - Detracción
+    contactDetails.add(buildContactDetail(
+        this.invoiceConfig.getDetraction().getPaymentMethod().getFormId(),
+        this.invoiceConfig.getDetraction().getPaymentMethod().getValueId()));
+
+    // Cuenta Bancaria - Detracción
+    contactDetails.add(buildContactDetail(
+        this.invoiceConfig.getDetraction().getBankAccount().getFormId(),
+        this.invoiceConfig.getDetraction().getBankAccount().getValueId()));
+
+    // Bien / Servicio - Detracción
+    contactDetails.add(buildContactDetail(
+        this.invoiceConfig.getDetraction().getServiceCode().getFormId(),
+        this.invoiceConfig.getDetraction().getServiceCode().getValueId()));
+
+    // Tipo de operación
+    contactDetails.add(buildContactDetail(
+        this.invoiceConfig.getDetraction().getOperationType().getFormId(),
+        this.invoiceConfig.getDetraction().getOperationType().getValueId()));
 
     payment.put("contactDetails", contactDetails);
     return payment;
   }
 
-  private Map<String, Object> buildContactDetail(Integer dynamicId, Object descValue, Integer detailAttrId) {
+  private Map<String, Object> buildContactDetail(Integer dynamicId, Integer detailAttrId) {
     Map<String, Object> detail = new HashMap<>();
     detail.put("dynamicAttributeId", dynamicId);
-    detail.put("description", descValue);
+    detail.put("description", detailAttrId);
     detail.put("detailAtributeContact", Collections.singletonList(Map.of("detailAtributeId", detailAttrId)));
     return detail;
   }
