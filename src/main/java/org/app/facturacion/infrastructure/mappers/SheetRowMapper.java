@@ -92,4 +92,46 @@ public class SheetRowMapper {
     return val.intValue();
   }
 
+  public List<ActivityReportRow> mapActivityReport(Sheet sheet) {
+
+    var rows = new ArrayList<ActivityReportRow>();
+
+    for (int rowIndex = 1; rowIndex <= sheet.getLastRowNum(); rowIndex++) {
+      Row row = sheet.getRow(rowIndex);
+
+      if (row == null)
+        continue;
+
+      // 2. Validación de Fila Vacía
+      if (isCellEmpty(row.getCell(this.clientNameCol)))
+        continue;
+
+      var dataBuilder = ActivityReportRow.builder();
+
+      try {
+        dataBuilder.provider(getCellString(row.getCell(0)));
+        dataBuilder.pucharseOrder(getCellString(row.getCell(1)));
+        dataBuilder.ocOs(getCellString(row.getCell(2)));
+        dataBuilder.initiativeId(getCellString(row.getCell(3)));
+        dataBuilder.resourceName(getCellString(row.getCell(4)));
+        dataBuilder.resourceProfile(getCellString(row.getCell(5)));
+        dataBuilder.servicePeriod(getCellString(row.getCell(6)));
+        dataBuilder.activities(getCellString(row.getCell(7)));
+        dataBuilder.activitiesDetails(getCellString(row.getCell(8)));
+        dataBuilder.manager(getCellString(row.getCell(9)));
+        dataBuilder.managment(getCellString(row.getCell(10)));
+        dataBuilder.feedback(getCellString(row.getCell(11)));
+        dataBuilder.incommingNote(getCellInteger(row.getCell(12)));
+        dataBuilder.invoiceSerial(getCellString(row.getCell(13)));
+
+        var data = dataBuilder.build();
+        rows.add(data);
+        this.logger.debug("Row: {} successfuly processed", rowIndex);
+      } catch (Exception e) {
+        this.logger.error("Error procesando fila {}: {}", rowIndex, e.getMessage());
+      }
+    }
+    return rows;
+  }
+
 }

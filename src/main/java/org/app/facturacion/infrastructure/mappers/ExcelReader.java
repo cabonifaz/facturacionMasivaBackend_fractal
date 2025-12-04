@@ -35,4 +35,23 @@ public class ExcelReader {
     }
   }
 
+  public List<ActivityReportRow> readActivityReportDocument(MultipartFile file) {
+
+    this.logger.info("Reading file: {}", file.getOriginalFilename());
+
+    try (InputStream is = file.getInputStream();
+        Workbook workbook = WorkbookFactory.create(is)) {
+
+      Sheet sheet = workbook.getSheetAt(0);
+      SheetRowMapper mapper = new SheetRowMapper();
+
+      return mapper.mapActivityReport(sheet);
+
+    } catch (Exception e) {
+      this.logger.error("Error reading Excel: {}", e);
+      throw new SystemAPIException("Error reading Excel file: ", e);
+    }
+
+  }
+
 }
