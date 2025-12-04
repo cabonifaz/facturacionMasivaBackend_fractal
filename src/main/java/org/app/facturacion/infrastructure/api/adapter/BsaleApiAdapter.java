@@ -275,10 +275,9 @@ public class BsaleApiAdapter {
         "dynamicAttributeId", this.invoiceConfig.getDynamicAttributeOcId()));
 
     // 2. Atributo de tipo factura
-    // Refactorizar para traer desde variables de entorno
     dynAttributesList.add(Map.of(
-        "description", "7428",
-        "dynamicAttributeId", 66));
+        "description", this.invoiceConfig.getDetraction().getOperationType().getValueId(),
+        "dynamicAttributeId", this.invoiceConfig.getDetraction().getOperationType().getFormId()));
 
     // Asignamos la lista completa
     root.put("dynamicAttributes", dynAttributesList);
