@@ -62,7 +62,6 @@ public class InvoiceBatchController {
   }
 
   @PostMapping("/create-invoices")
-
   public BaseAPIResponse<String> generateInvoices(
       @RequestBody @NonNull Workload request) {
 
