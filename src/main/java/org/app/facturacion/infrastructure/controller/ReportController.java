@@ -34,4 +34,17 @@ public class ReportController {
         .body(zipFile);
   }
 
+  @PostMapping("/create-send-report-email")
+  public ResponseEntity<byte[]> createAndSendEMailReport(
+      @RequestParam("file") MultipartFile file) {
+
+    this.reportService.createSendEmailReport(file);
+
+    return ResponseEntity.ok()
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"reportes.zip\"")
+        .contentType(MediaType.APPLICATION_OCTET_STREAM)
+        .body(null);
+
+  }
+
 }
