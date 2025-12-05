@@ -11,10 +11,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
-import org.app.facturacion.domain.models.InvoiceHistoryDetails;
+import org.app.facturacion.domain.models.InvoiceHeader;
 import org.app.facturacion.infrastructure.api.adapter.bsale.config.InvoiceConfig;
 import org.app.facturacion.infrastructure.api.adapter.bsale.dto.BsaleDocumentDetailDTO;
-import org.app.facturacion.infrastructure.api.dto.BsaleApiInvoiceRequestDTO;
 import org.app.facturacion.infrastructure.api.dto.BsaleInvoiceResponseDTO;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
@@ -122,7 +121,7 @@ public class BsaleApiAdapter {
           if (fileContent.length > 0) {
             return fileContent;
           } else {
-            this.logger.warn("Intento {}: Descarga exitosa (200 OK) pero el archivo tiene 0 bytes. Reintentando...",
+            this.logger.warn("Attemp {}: Successffully download (200 OK) but file has 0 bytes. Trying again...",
                 attempt);
           }
         } else if (response.getStatusCode().is3xxRedirection()) {
@@ -148,7 +147,7 @@ public class BsaleApiAdapter {
         "Error al descargar el PDF: Archivo vacío o error de conexión tras múltiples intentos.", null);
   }
 
-  public BsaleInvoiceResponseDTO createExternalInvoice(@NonNull BsaleApiInvoiceRequestDTO request) {
+  public BsaleInvoiceResponseDTO createExternalInvoice(@NonNull InvoiceHeader request) {
 
     HttpHeaders headers = new HttpHeaders();
     headers.set("access_token", this.bsaleToken);
@@ -186,7 +185,7 @@ public class BsaleApiAdapter {
     }
   }
 
-  public Map<String, Object> mapToBsaleStructure(BsaleApiInvoiceRequestDTO source) {
+  public Map<String, Object> mapToBsaleStructure(InvoiceHeader source) {
 
     LocalDate todayPeru = LocalDate.now(ZoneId.of("America/Lima"));
 
@@ -200,7 +199,7 @@ public class BsaleApiAdapter {
     List<Map<String, Object>> detailsList = new ArrayList<>();
     BigDecimal totalNeto = BigDecimal.ZERO;
 
-    for (InvoiceHistoryDetails d : source.getDetails()) {
+    for (var d : source.getDetails()) {
       // Lógica: (Precio * Cantidad) - Descuento
       double discount = d.getDiscount() != null ? d.getDiscount() : 0.0;
       BigDecimal rowNet = BigDecimal.valueOf(d.getAmountPerUnit())
@@ -256,12 +255,11 @@ public class BsaleApiAdapter {
 
     // Mapeo Cliente simple
     Map<String, Object> client = new HashMap<>();
-    client.put("code", source.getCode());
-    client.put("address", source.getAddress());
-    client.put("district", source.getDistrict());
-    client.put("city", source.getCity());
-    client.put("province", source.getProvince());
-    // client.put("activity", source.getActivity());
+    client.put("code", source.getClientCode());
+    client.put("address", source.getClientAddress());
+    client.put("district", source.getClientDistrict());
+    client.put("city", source.getClientCity());
+    client.put("province", source.getClientProvince());
 
     root.put("client", client);
     root.put("details", detailsList);

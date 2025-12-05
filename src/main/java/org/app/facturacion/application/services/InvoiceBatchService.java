@@ -1,6 +1,12 @@
 package org.app.facturacion.application.services;
 
+import java.io.ByteArrayOutputStream;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipOutputStream;
 
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
@@ -11,7 +17,6 @@ import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.app.facturacion.domain.port.InvoiceHistoryRepositoryPort;
 import org.app.facturacion.infrastructure.api.adapter.BsaleApiAdapter;
 import org.app.facturacion.infrastructure.api.adapter.N8NAdapter;
-import org.app.facturacion.infrastructure.api.dto.BsaleApiInvoiceRequestDTO;
 import org.app.facturacion.infrastructure.api.dto.BsaleInvoiceResponseDTO;
 import org.app.facturacion.infrastructure.mappers.ExcelReader;
 import org.app.facturacion.infrastructure.repositories.InvoiceBatchRepository;
@@ -31,7 +36,8 @@ public class InvoiceBatchService {
   private final N8NAdapter n8nAdapter;
 
   public InvoiceBatchService(InvoiceBatchRepository repo, BsaleApiAdapter adapter, InvoiceHistoryRepositoryPort rp,
-      N8NAdapter n8nAdapter) {
+      N8NAdapter n8nAdapter,
+      EmailService emailService) {
     this.repository = repo;
     this.bsaleApiAdapter = adapter;
     this.invoiceHisRp = rp;
@@ -86,7 +92,7 @@ public class InvoiceBatchService {
   }
 
   @SuppressWarnings("null")
-  public BaseAPIResponse<String> generateInvoices(@NonNull String workload) {
+  public BaseAPIResponse<byte[]> generateInvoices(@NonNull String workload) {
 
     List<InvoiceHeader> invoices = this.invoiceHisRp.findPendingInvoicesByWorkload(workload);
 
@@ -97,18 +103,19 @@ public class InvoiceBatchService {
 
     this.logger.info("Pending invoices: {}", invoices.size());
 
-    int successfulCount = 0;
+    Integer successfulCount = 0;
+    record InvoiceDoc(String documentName, String documentUrl) {
+    }
+    List<InvoiceDoc> generatedDocs = new ArrayList<>();
 
     for (InvoiceHeader invoice : invoices) {
       try {
-        BsaleApiInvoiceRequestDTO request = mapToApiRequest(invoice);
-        this.logger.debug("Request to Bsale: {}", request);
-        this.logger.debug("Details size: {}", request.getDetails().size());
-        this.logger.debug("Details: {}", request.getDetails());
 
-        BsaleInvoiceResponseDTO response = bsaleApiAdapter.createExternalInvoice(request);
+        this.logger.info("Invoice for-> OS/OC: {} and NI: {}", invoice.getObservation(), invoice.getIncomingNumber());
+        BsaleInvoiceResponseDTO response = bsaleApiAdapter.createExternalInvoice(invoice);
 
         if (response != null && response.getId() != null) {
+          generatedDocs.add(new InvoiceDoc(response.getSerialNumber(), response.getUrlPdfOriginal()));
 
           invoiceHisRp.updateInvoiceStatus(
               invoice.getHistoryId(),
@@ -116,6 +123,7 @@ public class InvoiceBatchService {
               response.getId());
           successfulCount++;
         }
+
       } catch (Exception e) {
         this.logger.error("Error processing Invoice ID " + invoice.getHistoryId() +
             ": " + e.getMessage());
@@ -125,24 +133,47 @@ public class InvoiceBatchService {
     String message = String.format("Proceso completado. %d de %d facturas enviadas exitosamente.",
         successfulCount, invoices.size());
 
+    this.logger.info(message);
     this.logger.info("Invoices generated: {}", invoices.size());
+    this.logger.info("Downloading {} files", successfulCount);
 
-    // Call n8n web hook to create excel report
-    this.n8nAdapter.callCreateExcelHook(workload);
-    return BaseAPIResponse.success(message, message);
+    try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        ZipOutputStream zos = new ZipOutputStream(baos)) {
+
+      for (InvoiceDoc doc : generatedDocs) {
+        try {
+          byte[] pdfBytes = this.bsaleApiAdapter.downloadBsaleDocument(doc.documentUrl());
+
+          if (pdfBytes != null && pdfBytes.length > 0) {
+            String safeFileName = doc.documentName().replaceAll("[\\\\/:*?\"<>|]", "_") + ".pdf";
+
+            ZipEntry entry = new ZipEntry(safeFileName);
+            zos.putNextEntry(entry);
+            zos.write(pdfBytes);
+            zos.closeEntry();
+          }
+        } catch (Exception e) {
+          this.logger.error("Error downloading/zipping invoice " + doc.documentName(), e);
+        }
+      }
+
+      zos.finish();
+      byte[] zipBytes = baos.toByteArray();
+
+      String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm"));
+
+      var zipFileName = new StringBuilder()
+          .append(timestamp)
+          .append("_")
+          .append("reporte_facturas.zip")
+          .toString();
+
+      this.logger.info("ZIP generated successfully. Size: {} bytes", zipBytes.length);
+      this.n8nAdapter.callCreateExcelHook(workload);
+      return BaseAPIResponse.success(zipFileName, zipBytes);
+    } catch (Exception e) {
+      this.logger.error("Error generating final ZIP", e);
+      return BaseAPIResponse.warning("Se co", null, null);
+    }
   }
-
-  private @NonNull BsaleApiInvoiceRequestDTO mapToApiRequest(InvoiceHeader invoice) {
-    BsaleApiInvoiceRequestDTO dto = new BsaleApiInvoiceRequestDTO();
-    dto.setCode(invoice.getClientCode());
-    dto.setAddress(invoice.getClientAddress());
-    dto.setDistrict(invoice.getClientDistrict());
-    dto.setCity(invoice.getClientCity());
-    dto.setActivity(invoice.getClientActivity());
-    dto.setObservation(invoice.getObservation());
-    dto.setDetails(invoice.getDetails());
-    dto.setProvince(invoice.getClientProvince());
-    return dto;
-  }
-
 }

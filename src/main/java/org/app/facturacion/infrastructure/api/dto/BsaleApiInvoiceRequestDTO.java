@@ -11,7 +11,7 @@ import lombok.NoArgsConstructor;
 @NoArgsConstructor
 public class BsaleApiInvoiceRequestDTO {
 
-  private String code; // Mapear el RUC del cliente
+  private String code;
   private String observation;
   private String address;
   private String district;

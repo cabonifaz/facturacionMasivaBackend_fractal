@@ -6,6 +6,9 @@ import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.Workload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
@@ -62,14 +65,17 @@ public class InvoiceBatchController {
   }
 
   @PostMapping("/create-invoices")
-  public BaseAPIResponse<String> generateInvoices(
+  public ResponseEntity<byte[]> generateInvoices(
       @RequestBody @NonNull Workload request) {
 
     this.logger.info("Generating Invoices for: {}", request.getWorkloadId());
 
-    BaseAPIResponse<String> rs = this.service.generateInvoices(request.getWorkloadId());
+    var rs = this.service.generateInvoices(request.getWorkloadId());
 
-    return BaseAPIResponse.success("Datos procesados correctamente", rs.getData());
+    return ResponseEntity.ok()
+        .contentType(MediaType.APPLICATION_PDF)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + rs.getMessage() + "\"")
+        .body(rs.getData());
   }
 
 }
