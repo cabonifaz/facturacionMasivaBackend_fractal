@@ -80,9 +80,12 @@ public class ReportService {
         // Add to ZIP
         var fileName = new StringBuilder()
             .append("Informe de actividades")
-            .append(" - ")
+            .append("_")
             .append(key.invoiceSerial)
-            .append(" - ")
+            .append("_")
+            .append("NI_")
+            .append(key.incommingNote)
+            .append("_")
             .append(pdfDto.getCollaborator())
             .append(".pdf")
             .toString();
