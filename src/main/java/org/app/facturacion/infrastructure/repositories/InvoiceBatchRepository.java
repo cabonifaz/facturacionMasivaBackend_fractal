@@ -1,6 +1,7 @@
 package org.app.facturacion.infrastructure.repositories;
 
 import java.sql.Types;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
@@ -8,16 +9,21 @@ import java.util.Map;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.InvoiceRow;
+import org.app.facturacion.domain.models.InvoicesTableReport;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.namedparam.MapSqlParameterSource;
 import org.springframework.jdbc.core.simple.SimpleJdbcCall;
 import org.springframework.stereotype.Repository;
 
 import com.microsoft.sqlserver.jdbc.SQLServerDataTable;
 import com.microsoft.sqlserver.jdbc.SQLServerException;
+
+import tools.jackson.core.type.TypeReference;
+import tools.jackson.databind.ObjectMapper;
 
 @Repository
 public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
@@ -211,6 +217,51 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
       throw new SystemAPIException(message, null);
 
     return true;
+  }
+
+  @Override
+  public List<InvoicesTableReport> getTableReportByWorkload(@NonNull String workload) {
+
+    this.logger.info("Getting report for workload: {}", workload);
+
+    final String SP_NAME = "SPP_REPORTE_FACTURAS";
+    SimpleJdbcCall jSimpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
+    jSimpleJdbcCall.withProcedureName(SP_NAME);
+
+    MapSqlParameterSource params = new MapSqlParameterSource()
+        .addValue("CODIGO_CARGA", workload);
+
+    Map<String, Object> result = jSimpleJdbcCall.execute(params);
+
+    if (result == null || result.isEmpty())
+      throw new SystemAPIException("No hubo respuesta de la base de datos", null);
+
+    @SuppressWarnings("unchecked")
+    List<Map<String, Object>> jsonRows = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
+        Collections.emptyList());
+
+    this.logger.debug("JSON Rows: {}", jsonRows.size());
+
+    if (jsonRows.isEmpty())
+      return new ArrayList<>();
+
+    var jsonBuilder = new StringBuilder();
+    for (var row : jsonRows) {
+      jsonBuilder.append(row.values().iterator().next());
+    }
+
+    var jsonString = jsonBuilder.toString();
+
+    try {
+      var objectMapper = new ObjectMapper();
+      return objectMapper.readValue(
+          jsonString,
+          new TypeReference<List<InvoicesTableReport>>() {
+          });
+    } catch (Exception e) {
+      this.logger.error("Error getting report: {}", e);
+      throw new SystemAPIException("Error obteniendo reporte", e.getCause());
+    }
   }
 
 }

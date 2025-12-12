@@ -1,6 +1,7 @@
 package org.app.facturacion.application.services;
 
 import java.io.ByteArrayOutputStream;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -8,8 +9,11 @@ import java.util.List;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.app.facturacion.application.utilities.ExcelHelper;
+import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
+import org.app.facturacion.domain.models.FileModelDTO;
 import org.app.facturacion.domain.models.InvoiceHeader;
 import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.InvoiceRow;
@@ -176,4 +180,41 @@ public class InvoiceBatchService {
       return BaseAPIResponse.warning("Se co", null, null);
     }
   }
+
+  public FileModelDTO generateTableReport(@NonNull String workload) {
+
+    this.logger.info("Generating table report for: {}", workload);
+    var reportData = this.repository.getTableReportByWorkload(workload);
+    this.logger.info("Data received from BD: {}", reportData.size());
+
+    if (reportData.isEmpty())
+      throw new SystemAPIException(
+          "No hay facturas completadas para generar reporte",
+          null);
+
+    try {
+      this.logger.info("Generating Excel bytes");
+      var excelBytes = ExcelHelper.generateInvoiceReport(reportData);
+      this.logger.info("File size: {} bytes", excelBytes.length);
+
+      var formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm");
+      var timestamp = LocalDateTime.now().format(formatter);
+      var filename = String.format("%s reporte_facturacion.xlsx", timestamp);
+
+      var fileDto = FileModelDTO
+          .builder()
+          .fileBytes(excelBytes)
+          .filename(filename)
+          .fileType("application/vnd.openxmlformats-officedocument.spreadsheetml.sheet")
+          .build();
+
+      this.logger.info("File model built: {}", fileDto.toString());
+
+      return fileDto;
+    } catch (IOException e) {
+      throw new SystemAPIException("Ocurrió un error generando el excel de reportes", e.getCause());
+    }
+
+  }
+
 }

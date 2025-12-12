@@ -78,4 +78,20 @@ public class InvoiceBatchController {
         .body(rs.getData());
   }
 
+  @PostMapping("/table-report")
+  public ResponseEntity<byte[]> generateTableReport(
+      @RequestBody @NonNull Workload request) {
+
+    this.logger.info("Generating Report for: {}", request.getWorkloadId());
+
+    var rs = this.service.generateTableReport(request.getWorkloadId());
+    var excelMediaType = MediaType
+        .parseMediaType(rs.getFileType());
+
+    return ResponseEntity.ok()
+        .contentType(excelMediaType)
+        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + rs.getFilename() + "\"")
+        .body(rs.getFileBytes());
+  }
+
 }
