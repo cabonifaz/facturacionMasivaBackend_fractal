@@ -17,9 +17,11 @@ public class FileModelDTO {
     return new StringBuilder()
         .append("Filename: ")
         .append(this.filename)
+        .append(" ")
         .append("Size: ")
         .append(fileBytes.length)
         .append(" bytes")
+        .append(" ")
         .append("MediaType: ")
         .append(this.fileType)
         .toString();

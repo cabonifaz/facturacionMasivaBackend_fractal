@@ -33,6 +33,7 @@ public class InvoiceService {
   private final InvoiceBatchRepositoryPort repository;
   private final BsaleApiAdapter bsaleApiAdapter;
   private final InvoiceHistoryRepositoryPort invoiceHisRp;
+  private final EmailService emailService;
 
   public InvoiceService(
       InvoiceBatchRepository repo,
@@ -42,6 +43,7 @@ public class InvoiceService {
     this.repository = repo;
     this.bsaleApiAdapter = adapter;
     this.invoiceHisRp = rp;
+    this.emailService = emailService;
   }
 
   /**
@@ -91,7 +93,11 @@ public class InvoiceService {
     return BaseAPIResponse.success("Datos pregenerados correctamente", response);
   }
 
-  @SuppressWarnings("null")
+  /**
+   * 
+   * @param workload
+   * @return
+   */
   public BaseAPIResponse<byte[]> generateInvoices(@NonNull String workload) {
 
     List<InvoiceHeader> invoices = this.invoiceHisRp.findPendingInvoicesByWorkload(workload);
@@ -104,9 +110,7 @@ public class InvoiceService {
     this.logger.info("Pending invoices: {}", invoices.size());
 
     Integer successfulCount = 0;
-    record InvoiceDoc(String documentName, String documentUrl) {
-    }
-    List<InvoiceDoc> generatedDocs = new ArrayList<>();
+    List<InvoiceHeader> successfulInvoices = new ArrayList<>();
 
     for (var invoice : invoices) {
       try {
@@ -115,13 +119,20 @@ public class InvoiceService {
         var response = bsaleApiAdapter.createExternalInvoice(invoice);
 
         if (response != null && response.getId() != null) {
-          generatedDocs.add(new InvoiceDoc(response.getSerialNumber(), response.getUrlPdfOriginal()));
 
+          invoice.setSerialNumber(response.getSerialNumber());
+          invoice.setDocumentId(response.getId());
+          invoice.setDocumentUrl(response.getUrlPdfOriginal());
+
+          // Update Invoice in database
           invoiceHisRp.updateInvoiceStatus(
               invoice.getHistoryId(),
               response.getSerialNumber(),
               response.getId());
           successfulCount++;
+
+          successfulInvoices.add(invoice);
+
         }
 
       } catch (Exception e) {
@@ -130,46 +141,53 @@ public class InvoiceService {
       }
     }
 
-    String message = String.format("Proceso completado. %d de %d facturas enviadas exitosamente.",
+    String message = String.format("Proceso completado. %d de %d facturas emitidas exitosamente.",
         successfulCount, invoices.size());
 
-    this.logger.info(message);
-    this.logger.info("Invoices generated: {}", invoices.size());
-    this.logger.info("Downloading {} files", successfulCount);
+    this.logger.info("Invoices generated: {}", successfulCount);
+    this.logger.info("Generating report async mode...");
 
-    List<FileModelDTO> filesToZip = new ArrayList<>();
+    this.sendFullReport(workload, successfulInvoices, message);
 
-    for (var doc : generatedDocs) {
-      try {
-        byte[] pdfBytes = this.bsaleApiAdapter.downloadBsaleDocument(doc.documentUrl());
+    return BaseAPIResponse
+        .success("Facturas generadas existosamente, se envirá un email de confirmación en unos minutos", null);
+  }
 
-        if (pdfBytes != null && pdfBytes.length > 0) {
+  @SuppressWarnings("null")
+  private void sendFullReport(@NonNull String workload, List<InvoiceHeader> successfulInvoices, String reportMessage) {
 
-          String safeFileName = doc.documentName + ".pdf";
+    try {
+      // Zip downloaded files
+      String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm"));
+      var downloadedInvoices = this.downloadGeneratedInvoices(successfulInvoices);
+      byte[] zipBytes = ZipSysHelper.compressFiles(downloadedInvoices);
 
-          var fileDto = FileModelDTO.builder()
-              .filename(safeFileName)
-              .fileBytes(pdfBytes)
-              .build();
+      var zipFileName = new StringBuilder()
+          .append(timestamp)
+          .append("-")
+          .append("facturas.zip")
+          .toString();
 
-          filesToZip.add(fileDto);
-        }
-      } catch (Exception e) {
-        this.logger.error("Error downloading/zipping invoice " + doc.documentName(), e);
-      }
+      var invoicesZip = FileModelDTO.builder()
+          .filename(zipFileName)
+          .fileBytes(zipBytes)
+          .build();
+
+      // Create excel report
+      var reportExcelFile = this.generateTableReport(workload);
+
+      // Send email report
+      var attachments = List.of(invoicesZip, reportExcelFile);
+
+      this.emailService.sendEmailWithAttachments(
+          "jean.velasquez@fractalservicios.pe",
+          "Reporte de facturacion",
+          reportMessage,
+          false,
+          attachments);
+    } catch (Exception e) {
+      this.logger.error("Error sendig report", e);
     }
-
-    byte[] zipBytes = ZipSysHelper.compressFiles(filesToZip);
-    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm"));
-
-    var zipFileName = new StringBuilder()
-        .append(timestamp)
-        .append("-")
-        .append("facturas.zip")
-        .toString();
-
-    this.logger.info("ZIP generated successfully. Size: {} bytes", zipBytes.length);
-    return BaseAPIResponse.success(zipFileName, zipBytes);
   }
 
   public FileModelDTO generateTableReport(@NonNull String workload) {
@@ -208,4 +226,34 @@ public class InvoiceService {
 
   }
 
+  public List<FileModelDTO> downloadGeneratedInvoices(List<InvoiceHeader> invoices) {
+
+    List<FileModelDTO> downloadedFiles = new ArrayList<>();
+
+    for (var invoice : invoices) {
+      try {
+
+        if (invoice.getDocumentUrl() == null)
+          throw new ValidationAPIException("La factura no tiene un enlace del cual descargar");
+
+        @SuppressWarnings("null")
+        byte[] pdfBytes = this.bsaleApiAdapter.downloadBsaleDocument(invoice.getDocumentUrl());
+
+        if (pdfBytes != null && pdfBytes.length > 0) {
+
+          String safeFileName = invoice.getSerialNumber() + ".pdf";
+
+          var fileDto = FileModelDTO.builder()
+              .filename(safeFileName)
+              .fileBytes(pdfBytes)
+              .build();
+
+          downloadedFiles.add(fileDto);
+        }
+      } catch (Exception e) {
+        this.logger.error("Error downloading invoice " + invoice.getSerialNumber(), e);
+      }
+    }
+    return downloadedFiles;
+  }
 }

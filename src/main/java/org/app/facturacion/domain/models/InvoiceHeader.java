@@ -12,6 +12,9 @@ public class InvoiceHeader {
 
   private Integer incomingNumber;
 
+  private Long documentId;
+  private String serialNumber;
+  private String documentUrl;
   private String observation;
   private String clientCode;
   private String clientAddress;

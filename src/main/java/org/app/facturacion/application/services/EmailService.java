@@ -7,6 +7,7 @@ import org.app.facturacion.domain.models.FileModelDTO;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.http.MediaType;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -58,7 +59,7 @@ public class EmailService {
       for (var attachment : attachments) {
         var dataSource = new ByteArrayDataSource(
             attachment.getFileBytes(),
-            attachment.getFileType());
+            MediaType.APPLICATION_OCTET_STREAM_VALUE);
         helper.addAttachment(attachment.getFilename(), dataSource);
       }
 
