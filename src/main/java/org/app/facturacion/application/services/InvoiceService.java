@@ -5,6 +5,8 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 
 import org.app.facturacion.application.utilities.ExcelHelper;
 import org.app.facturacion.application.utilities.ZipSysHelper;
@@ -23,6 +25,8 @@ import org.app.facturacion.infrastructure.repositories.InvoiceBatchRepository;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -34,16 +38,19 @@ public class InvoiceService {
   private final BsaleApiAdapter bsaleApiAdapter;
   private final InvoiceHistoryRepositoryPort invoiceHisRp;
   private final EmailService emailService;
+  private final Executor taskExecutor;
 
   public InvoiceService(
       InvoiceBatchRepository repo,
       BsaleApiAdapter adapter,
       InvoiceHistoryRepositoryPort rp,
-      EmailService emailService) {
+      EmailService emailService,
+      @Qualifier("taskExecutor") Executor taskExecutor) {
     this.repository = repo;
     this.bsaleApiAdapter = adapter;
     this.invoiceHisRp = rp;
     this.emailService = emailService;
+    this.taskExecutor = taskExecutor;
   }
 
   /**
@@ -226,34 +233,31 @@ public class InvoiceService {
 
   }
 
+  @SuppressWarnings("null")
   public List<FileModelDTO> downloadGeneratedInvoices(List<InvoiceHeader> invoices) {
 
-    List<FileModelDTO> downloadedFiles = new ArrayList<>();
+    List<CompletableFuture<FileModelDTO>> futures = invoices.stream()
+        .map(invoice -> CompletableFuture.supplyAsync(() -> {
+          try {
+            byte[] pdfBytes = this.bsaleApiAdapter.downloadBsaleDocument(invoice.getDocumentUrl());
+            if (pdfBytes != null && pdfBytes.length > 0) {
+              String safeFileName = invoice.getSerialNumber() + ".pdf";
+              return FileModelDTO.builder()
+                  .filename(safeFileName)
+                  .fileBytes(pdfBytes)
+                  .fileType(MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                  .build();
+            }
+          } catch (Exception e) {
+            this.logger.error("Error downloading " + invoice.getSerialNumber(), e);
+          }
+          return null;
+        }, taskExecutor))
+        .toList();
 
-    for (var invoice : invoices) {
-      try {
-
-        if (invoice.getDocumentUrl() == null)
-          throw new ValidationAPIException("La factura no tiene un enlace del cual descargar");
-
-        @SuppressWarnings("null")
-        byte[] pdfBytes = this.bsaleApiAdapter.downloadBsaleDocument(invoice.getDocumentUrl());
-
-        if (pdfBytes != null && pdfBytes.length > 0) {
-
-          String safeFileName = invoice.getSerialNumber() + ".pdf";
-
-          var fileDto = FileModelDTO.builder()
-              .filename(safeFileName)
-              .fileBytes(pdfBytes)
-              .build();
-
-          downloadedFiles.add(fileDto);
-        }
-      } catch (Exception e) {
-        this.logger.error("Error downloading invoice " + invoice.getSerialNumber(), e);
-      }
-    }
-    return downloadedFiles;
+    return futures.stream()
+        .map(CompletableFuture::join)
+        .filter(java.util.Objects::nonNull)
+        .toList();
   }
 }
