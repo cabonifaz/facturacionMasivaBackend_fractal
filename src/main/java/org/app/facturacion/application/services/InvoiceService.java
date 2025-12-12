@@ -31,7 +31,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
 @Service
-public class InvoiceBatchService {
+public class InvoiceService {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final InvoiceBatchRepositoryPort repository;
@@ -39,7 +39,7 @@ public class InvoiceBatchService {
   private final InvoiceHistoryRepositoryPort invoiceHisRp;
   private final N8NAdapter n8nAdapter;
 
-  public InvoiceBatchService(InvoiceBatchRepository repo, BsaleApiAdapter adapter, InvoiceHistoryRepositoryPort rp,
+  public InvoiceService(InvoiceBatchRepository repo, BsaleApiAdapter adapter, InvoiceHistoryRepositoryPort rp,
       N8NAdapter n8nAdapter,
       EmailService emailService) {
     this.repository = repo;

@@ -1,6 +1,6 @@
 package org.app.facturacion.infrastructure.controller;
 
-import org.app.facturacion.application.services.InvoiceBatchService;
+import org.app.facturacion.application.services.InvoiceService;
 import org.app.facturacion.domain.models.BaseAPIResponse;
 import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.Workload;
@@ -22,13 +22,13 @@ import lombok.NonNull;
 @RestController()
 @RequestMapping("/invoices-batch")
 @Validated
-public class InvoiceBatchController {
+public class InvoiceController {
 
-  private Logger logger = LoggerFactory.getLogger(InvoiceBatchController.class);
+  private Logger logger = LoggerFactory.getLogger(InvoiceController.class);
 
-  private final InvoiceBatchService service;
+  private final InvoiceService service;
 
-  public InvoiceBatchController(InvoiceBatchService service) {
+  public InvoiceController(InvoiceService service) {
     this.service = service;
   }
 
