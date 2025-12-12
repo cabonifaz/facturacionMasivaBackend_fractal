@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.config;
+package org.app.facturacion.infrastructure.controller;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
