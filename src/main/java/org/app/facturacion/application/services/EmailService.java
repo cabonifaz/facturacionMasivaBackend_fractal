@@ -3,7 +3,7 @@ package org.app.facturacion.application.services;
 import java.util.List;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
-import org.app.facturacion.domain.models.FIleModelDTO;
+import org.app.facturacion.domain.models.FileModelDTO;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,12 +34,12 @@ public class EmailService {
    * @param attachments Lista de archivos adjuntos
    */
 
-  public void sendEmailWithAttachment(
+  public void sendEmailWithAttachments(
       String to,
       String subject,
       String body,
       boolean isHtmlBody,
-      @NonNull List<FIleModelDTO> attachments) {
+      @NonNull List<FileModelDTO> attachments) {
     try {
 
       this.logger.info("Sending Email with {} attachments", attachments.size());
