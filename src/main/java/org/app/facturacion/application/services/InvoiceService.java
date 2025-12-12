@@ -1,15 +1,13 @@
 package org.app.facturacion.application.services;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
 
 import org.app.facturacion.application.utilities.ExcelHelper;
+import org.app.facturacion.application.utilities.ZipSysHelper;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
@@ -20,8 +18,6 @@ import org.app.facturacion.domain.models.InvoiceRow;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.app.facturacion.domain.port.InvoiceHistoryRepositoryPort;
 import org.app.facturacion.infrastructure.api.adapter.BsaleApiAdapter;
-import org.app.facturacion.infrastructure.api.adapter.N8NAdapter;
-import org.app.facturacion.infrastructure.api.dto.BsaleInvoiceResponseDTO;
 import org.app.facturacion.infrastructure.mappers.ExcelReader;
 import org.app.facturacion.infrastructure.repositories.InvoiceBatchRepository;
 import org.eclipse.jdt.annotation.NonNull;
@@ -37,15 +33,15 @@ public class InvoiceService {
   private final InvoiceBatchRepositoryPort repository;
   private final BsaleApiAdapter bsaleApiAdapter;
   private final InvoiceHistoryRepositoryPort invoiceHisRp;
-  private final N8NAdapter n8nAdapter;
 
-  public InvoiceService(InvoiceBatchRepository repo, BsaleApiAdapter adapter, InvoiceHistoryRepositoryPort rp,
-      N8NAdapter n8nAdapter,
+  public InvoiceService(
+      InvoiceBatchRepository repo,
+      BsaleApiAdapter adapter,
+      InvoiceHistoryRepositoryPort rp,
       EmailService emailService) {
     this.repository = repo;
     this.bsaleApiAdapter = adapter;
     this.invoiceHisRp = rp;
-    this.n8nAdapter = n8nAdapter;
   }
 
   /**
@@ -112,11 +108,11 @@ public class InvoiceService {
     }
     List<InvoiceDoc> generatedDocs = new ArrayList<>();
 
-    for (InvoiceHeader invoice : invoices) {
+    for (var invoice : invoices) {
       try {
 
         this.logger.info("Invoice for-> OS/OC: {} and NI: {}", invoice.getObservation(), invoice.getIncomingNumber());
-        BsaleInvoiceResponseDTO response = bsaleApiAdapter.createExternalInvoice(invoice);
+        var response = bsaleApiAdapter.createExternalInvoice(invoice);
 
         if (response != null && response.getId() != null) {
           generatedDocs.add(new InvoiceDoc(response.getSerialNumber(), response.getUrlPdfOriginal()));
@@ -141,44 +137,39 @@ public class InvoiceService {
     this.logger.info("Invoices generated: {}", invoices.size());
     this.logger.info("Downloading {} files", successfulCount);
 
-    try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(baos)) {
+    List<FileModelDTO> filesToZip = new ArrayList<>();
 
-      for (InvoiceDoc doc : generatedDocs) {
-        try {
-          byte[] pdfBytes = this.bsaleApiAdapter.downloadBsaleDocument(doc.documentUrl());
+    for (var doc : generatedDocs) {
+      try {
+        byte[] pdfBytes = this.bsaleApiAdapter.downloadBsaleDocument(doc.documentUrl());
 
-          if (pdfBytes != null && pdfBytes.length > 0) {
-            String safeFileName = doc.documentName().replaceAll("[\\\\/:*?\"<>|]", "_") + ".pdf";
+        if (pdfBytes != null && pdfBytes.length > 0) {
 
-            ZipEntry entry = new ZipEntry(safeFileName);
-            zos.putNextEntry(entry);
-            zos.write(pdfBytes);
-            zos.closeEntry();
-          }
-        } catch (Exception e) {
-          this.logger.error("Error downloading/zipping invoice " + doc.documentName(), e);
+          String safeFileName = doc.documentName + ".pdf";
+
+          var fileDto = FileModelDTO.builder()
+              .filename(safeFileName)
+              .fileBytes(pdfBytes)
+              .build();
+
+          filesToZip.add(fileDto);
         }
+      } catch (Exception e) {
+        this.logger.error("Error downloading/zipping invoice " + doc.documentName(), e);
       }
-
-      zos.finish();
-      byte[] zipBytes = baos.toByteArray();
-
-      String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm"));
-
-      var zipFileName = new StringBuilder()
-          .append(timestamp)
-          .append("_")
-          .append("reporte_facturas.zip")
-          .toString();
-
-      this.logger.info("ZIP generated successfully. Size: {} bytes", zipBytes.length);
-      this.n8nAdapter.callCreateExcelHook(workload);
-      return BaseAPIResponse.success(zipFileName, zipBytes);
-    } catch (Exception e) {
-      this.logger.error("Error generating final ZIP", e);
-      return BaseAPIResponse.warning("Se co", null, null);
     }
+
+    byte[] zipBytes = ZipSysHelper.compressFiles(filesToZip);
+    String timestamp = LocalDateTime.now().format(DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm"));
+
+    var zipFileName = new StringBuilder()
+        .append(timestamp)
+        .append("-")
+        .append("facturas.zip")
+        .toString();
+
+    this.logger.info("ZIP generated successfully. Size: {} bytes", zipBytes.length);
+    return BaseAPIResponse.success(zipFileName, zipBytes);
   }
 
   public FileModelDTO generateTableReport(@NonNull String workload) {
@@ -197,9 +188,9 @@ public class InvoiceService {
       var excelBytes = ExcelHelper.generateInvoiceReport(reportData);
       this.logger.info("File size: {} bytes", excelBytes.length);
 
-      var formatter = DateTimeFormatter.ofPattern("yyyy_MM_dd_HH_mm");
+      var formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd-HH-mm");
       var timestamp = LocalDateTime.now().format(formatter);
-      var filename = String.format("%s reporte_facturacion.xlsx", timestamp);
+      var filename = String.format("%s-reporte-facturacion.xlsx", timestamp);
 
       var fileDto = FileModelDTO
           .builder()
