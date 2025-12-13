@@ -2,7 +2,6 @@ package org.app.facturacion.application.services;
 
 import java.util.List;
 
-import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.models.FileModelDTO;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
@@ -10,6 +9,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.http.MediaType;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -35,6 +35,7 @@ public class EmailService {
    * @param attachments Lista de archivos adjuntos
    */
 
+  @Async("taskExecutor")
   public void sendEmailWithAttachments(
       String to,
       String subject,
@@ -69,7 +70,6 @@ public class EmailService {
 
     } catch (MessagingException e) {
       this.logger.error("Email not sent: {}", e);
-      throw new SystemAPIException("Falló al enviar el correo", e);
     }
   }
 
@@ -81,6 +81,7 @@ public class EmailService {
    * @param body       Cuerpo del correo, HTML o Texto plano
    * @param isHtmlBody true para indicar que es HTML
    */
+  @Async("taskExecutor")
   public void sendEmail(
       String to,
       String subject,
@@ -107,7 +108,6 @@ public class EmailService {
       this.logger.info("Email sent to: {}", to);
     } catch (MessagingException e) {
       this.logger.error("Error sending email: {}", e);
-      throw new SystemAPIException("Falló al enviar el correo", e);
     }
   }
 

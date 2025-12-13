@@ -105,7 +105,7 @@ public class InvoiceService {
    * @param workload
    * @return
    */
-  public BaseAPIResponse<byte[]> generateInvoices(@NonNull String workload) {
+  public BaseAPIResponse<String> generateInvoices(@NonNull String workload) {
 
     List<InvoiceHeader> invoices = this.invoiceHisRp.findPendingInvoicesByWorkload(workload);
 
@@ -116,8 +116,7 @@ public class InvoiceService {
 
     this.logger.info("Pending invoices: {}", invoices.size());
 
-    Integer successfulCount = 0;
-    List<InvoiceHeader> successfulInvoices = new ArrayList<>();
+    List<@NonNull InvoiceHeader> successfulInvoices = new ArrayList<>();
 
     for (var invoice : invoices) {
       try {
@@ -131,12 +130,10 @@ public class InvoiceService {
           invoice.setDocumentId(response.getId());
           invoice.setDocumentUrl(response.getUrlPdfOriginal());
 
-          // Update Invoice in database
           invoiceHisRp.updateInvoiceStatus(
               invoice.getHistoryId(),
               response.getSerialNumber(),
               response.getId());
-          successfulCount++;
 
           successfulInvoices.add(invoice);
 
@@ -149,19 +146,23 @@ public class InvoiceService {
     }
 
     String message = String.format("Proceso completado. %d de %d facturas emitidas exitosamente.",
-        successfulCount, invoices.size());
+        successfulInvoices.size(), invoices.size());
 
-    this.logger.info("Invoices generated: {}", successfulCount);
-    this.logger.info("Generating report async mode...");
+    this.logger.info("Invoices generated: {}", successfulInvoices.size());
 
-    this.sendFullReport(workload, successfulInvoices, message);
+    CompletableFuture.runAsync(() -> {
+      this.logger.info("Generating report async mode...");
+      this.sendFullReport(workload, successfulInvoices, message);
+    }, taskExecutor);
 
-    return BaseAPIResponse
-        .success("Facturas generadas existosamente, se envirá un email de confirmación en unos minutos", null);
+    return BaseAPIResponse.success(
+        "Facturas generadas existosamente, se enviará un email de confirmación en unos minutos",
+        message);
   }
 
   @SuppressWarnings("null")
-  private void sendFullReport(@NonNull String workload, List<InvoiceHeader> successfulInvoices, String reportMessage) {
+  private void sendFullReport(@NonNull String workload, List<@NonNull InvoiceHeader> successfulInvoices,
+      String reportMessage) {
 
     try {
       // Zip downloaded files

@@ -65,17 +65,14 @@ public class InvoiceController {
   }
 
   @PostMapping("/create-invoices")
-  public ResponseEntity<byte[]> generateInvoices(
+  public ResponseEntity<BaseAPIResponse<String>> generateInvoices(
       @RequestBody @NonNull Workload request) {
 
     this.logger.info("Generating Invoices for: {}", request.getWorkloadId());
 
     var rs = this.service.generateInvoices(request.getWorkloadId());
 
-    return ResponseEntity.ok()
-        .contentType(MediaType.APPLICATION_PDF)
-        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + rs.getMessage() + "\"")
-        .body(rs.getData());
+    return ResponseEntity.ok(rs);
   }
 
   @PostMapping("/table-report")
