@@ -7,6 +7,6 @@ import org.springframework.web.bind.annotation.RestController;
 public class HelloController {
   @GetMapping("/")
   public String home() {
-    return "API FactClientBk is working";
+    return "API FactClientBk is working version 0.0.1";
   }
 }
