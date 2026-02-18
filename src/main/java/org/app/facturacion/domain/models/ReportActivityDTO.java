@@ -29,6 +29,8 @@ public class ReportActivityDTO {
     private String incomingNote;
     private String invoice;
     private String feedback;
+    private String manager;
+    private String management;
   }
 
 }

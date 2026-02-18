@@ -77,8 +77,8 @@ public class ExcelHelper {
     for (var data : invoiceData) {
       var row = sheet.createRow(rowNum++);
 
-      row.createCell(0).setCellValue(data.getClientName());
-      row.createCell(1).setCellValue(data.getAnalytic());
+      row.createCell(0).setCellValue("BANBIF");
+      row.createCell(1).setCellValue("OUT.MTT");
       row.createCell(2).setCellValue(data.getOrderNumber());
       row.createCell(3).setCellValue(data.getIncommingNumber());
 
@@ -90,7 +90,10 @@ public class ExcelHelper {
       row.createCell(8).setCellValue(data.getCurrencyName());
       row.createCell(9).setCellValue(data.getPricePerUnit().toPlainString());
       row.createCell(10).setCellValue(data.getIgv().toPlainString());
-      row.createCell(11).setCellValue(data.getTotalToPay().toPlainString());
+
+      var subTotal = data.getPricePerUnit().add(data.getIgv());
+
+      row.createCell(11).setCellValue(subTotal.toPlainString());
 
       row.createCell(12).setCellValue(data.getContact());
       row.createCell(13).setCellValue(data.getInvoiceNumber());

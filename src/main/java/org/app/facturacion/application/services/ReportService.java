@@ -79,13 +79,10 @@ public class ReportService {
 
         // Add to ZIP
         var fileName = new StringBuilder()
-            .append("Informe de actividades")
-            .append("_")
-            .append(key.invoiceSerial)
-            .append("_")
-            .append("NI_")
-            .append(key.incommingNote)
-            .append("_")
+            .append("CELER")
+            .append(" - ")
+            .append(key.ocOs)
+            .append(" - ")
             .append(pdfDto.getCollaborator())
             .append(".pdf")
             .toString();
@@ -118,7 +115,7 @@ public class ReportService {
     dto.setCompany(first.getProvider() != null ? first.getProvider() : "CELER SAC");
     dto.setCollaborator(first.getResourceName());
     dto.setProfile(first.getResourceProfile());
-    dto.setEmissionDate("Dic-25"); // Harcodeado por ahora, debería venir como dato
+    dto.setEmissionDate("Feb-03"); // Harcodeado por ahora, debería venir como dato
 
     // Details
     List<ReportActivityDTO.ReportDetails> detailsList = new ArrayList<>();
@@ -140,6 +137,8 @@ public class ReportService {
       detail.setIncomingNote(String.valueOf(row.getIncommingNote()));
       detail.setInvoice(row.getInvoiceSerial());
       detail.setFeedback(row.getFeedback());
+      detail.setManagement(row.getManagment());
+      detail.setManager(row.getManager());
 
       detailsList.add(detail);
     }
