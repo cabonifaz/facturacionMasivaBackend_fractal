@@ -1,8 +1,8 @@
 package org.app.facturacion.infrastructure.controller;
 
-import org.app.facturacion.application.services.InvoiceService;
 import org.app.facturacion.domain.models.BaseAPIResponse;
 import org.app.facturacion.domain.models.Workload;
+import org.app.facturacion.services.InvoiceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpHeaders;

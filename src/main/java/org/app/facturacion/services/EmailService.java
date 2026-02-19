@@ -1,4 +1,4 @@
-package org.app.facturacion.application.services;
+package org.app.facturacion.services;
 
 import java.util.List;
 
