@@ -11,11 +11,11 @@ import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import org.app.facturacion.application.mappers.ActivityReportRow;
+import org.app.facturacion.application.mappers.ExcelReader;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.ReportActivityDTO;
-import org.app.facturacion.infrastructure.mappers.ActivityReportRow;
-import org.app.facturacion.infrastructure.mappers.ExcelReader;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
