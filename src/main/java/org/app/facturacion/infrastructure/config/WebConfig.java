@@ -1,6 +1,6 @@
 package org.app.facturacion.infrastructure.config;
 
-import org.app.facturacion.infrastructure.interceptor.FileUploadInterceptor;
+import org.app.facturacion.application.interceptors.FileUploadInterceptor;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.web.servlet.config.annotation.InterceptorRegistry;

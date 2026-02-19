@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.interceptor;
+package org.app.facturacion.application.interceptors;
 
 import java.util.List;
 
