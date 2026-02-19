@@ -230,27 +230,31 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
 
     var reportResultSet = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
         Collections.emptyList());
-    this.logger.debug("JSON Rows: {}", reportResultSet.size());
-    if (reportResultSet.isEmpty())
+
+    if (reportResultSet.isEmpty()) {
+      this.logger.warn("Empty report received from DB");
       return new ArrayList<>();
+    }
+
+    this.logger.info("Report received from DB");
 
     return reportResultSet.stream().map(row -> {
-      InvoicesTableReport report = new InvoicesTableReport();
-      report.setIncomingNumber((Integer) row.get("NOTA_INGRESO"));
-      report.setStartDate((String) row.get("FCH_INICIO"));
-      report.setEndDate((String) row.get("FCH_FIN"));
-      report.setConcept((String) row.get("CONCEPTO"));
-      report.setPricePerUnit((BigDecimal) row.get("MONTO_UNITARIO"));
-      report.setClientName((String) row.get("CLIENTE"));
-      report.setAnalytic((String) row.get("ANALITICA"));
-      report.setIgv((BigDecimal) row.get("IGV"));
-      report.setTotalToPay((BigDecimal) row.get("TOTAL_PAGAR"));
-      report.setContact((String) row.get("CONTACTO"));
-      report.setInvoiceNumber((String) row.get("NUM_FACTURA"));
-      report.setCurrencyName((String) row.get("MONEDA"));
-      report.setCollaborator((String) row.get("COLABORADOR"));
-      report.setObservation((String) row.get("OBSERVACION"));
-      return report;
+      var reportBuilder = InvoicesTableReport.builder();
+      reportBuilder.incomingNumber((Integer) row.get("NOTA_INGRESO"));
+      reportBuilder.startDate((String) row.get("FCH_INICIO"));
+      reportBuilder.endDate((String) row.get("FCH_FIN"));
+      reportBuilder.concept((String) row.get("CONCEPTO"));
+      reportBuilder.pricePerUnit((BigDecimal) row.get("MONTO_UNITARIO"));
+      reportBuilder.clientName((String) row.get("CLIENTE"));
+      reportBuilder.analytic((String) row.get("ANALITICA"));
+      reportBuilder.igv((BigDecimal) row.get("IGV"));
+      reportBuilder.totalToPay((BigDecimal) row.get("TOTAL_PAGAR"));
+      reportBuilder.contact((String) row.get("CONTACTO"));
+      reportBuilder.invoiceNumber((String) row.get("NUM_FACTURA"));
+      reportBuilder.currencyName((String) row.get("MONEDA"));
+      reportBuilder.collaborator((String) row.get("COLABORADOR"));
+      reportBuilder.observation((String) row.get("OBSERVACION"));
+      return reportBuilder.build();
     }).collect(Collectors.toList());
   }
 

@@ -1,8 +1,10 @@
 package org.app.facturacion.domain.models;
 
+import lombok.Builder;
 import lombok.Data;
 import java.math.BigDecimal;
 
+@Builder
 @Data
 public class InvoicesTableReport {
   private Integer incomingNumber;
