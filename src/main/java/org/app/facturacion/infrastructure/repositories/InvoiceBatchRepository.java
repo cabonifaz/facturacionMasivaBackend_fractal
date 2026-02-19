@@ -1,10 +1,12 @@
 package org.app.facturacion.infrastructure.repositories;
 
+import java.math.BigDecimal;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.models.InvoicePreGenerate;
@@ -22,9 +24,7 @@ import org.springframework.stereotype.Repository;
 import com.microsoft.sqlserver.jdbc.SQLServerDataTable;
 import com.microsoft.sqlserver.jdbc.SQLServerException;
 
-import tools.jackson.core.type.TypeReference;
-import tools.jackson.databind.ObjectMapper;
-
+@SuppressWarnings("unchecked")
 @Repository
 public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
 
@@ -60,7 +60,6 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
       if (result == null || result.isEmpty())
         throw new SystemAPIException("No hubo respuesta de la base de datos", null);
 
-      @SuppressWarnings("unchecked")
       List<Map<String, Object>> responseList = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
           Collections.emptyList());
 
@@ -75,7 +74,6 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
       if (idMessage != 2)
         throw new SystemAPIException(message, null);
 
-      @SuppressWarnings("unchecked")
       List<Map<String, Object>> workLoadList = (List<Map<String, Object>>) result.getOrDefault("#result-set-2",
           Collections.emptyList());
 
@@ -162,7 +160,6 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
     if (result == null || result.isEmpty())
       throw new SystemAPIException("No hubo respuesta de la base de datos", null);
 
-    @SuppressWarnings("unchecked")
     List<Map<String, Object>> responseList = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
         Collections.emptyList());
 
@@ -201,7 +198,6 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
     if (result == null || result.isEmpty())
       throw new SystemAPIException("No hubo respuesta de la base de datos", null);
 
-    @SuppressWarnings("unchecked")
     List<Map<String, Object>> responseList = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
         Collections.emptyList());
 
@@ -221,47 +217,41 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
 
   @Override
   public List<InvoicesTableReport> getTableReportByWorkload(@NonNull String workload) {
-
     this.logger.info("Getting report for workload: {}", workload);
-
     final String SP_NAME = "SPP_REPORTE_FACTURAS";
-    SimpleJdbcCall jSimpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
-    jSimpleJdbcCall.withProcedureName(SP_NAME);
 
+    var jSimpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
+    jSimpleJdbcCall.withProcedureName(SP_NAME);
     MapSqlParameterSource params = new MapSqlParameterSource()
         .addValue("CODIGO_CARGA", workload);
-
     Map<String, Object> result = jSimpleJdbcCall.execute(params);
-
     if (result == null || result.isEmpty())
       throw new SystemAPIException("No hubo respuesta de la base de datos", null);
 
-    @SuppressWarnings("unchecked")
-    List<Map<String, Object>> jsonRows = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
+    var reportResultSet = (List<Map<String, Object>>) result.getOrDefault("#result-set-1",
         Collections.emptyList());
-
-    this.logger.debug("JSON Rows: {}", jsonRows.size());
-
-    if (jsonRows.isEmpty())
+    this.logger.debug("JSON Rows: {}", reportResultSet.size());
+    if (reportResultSet.isEmpty())
       return new ArrayList<>();
 
-    var jsonBuilder = new StringBuilder();
-    for (var row : jsonRows) {
-      jsonBuilder.append(row.values().iterator().next());
-    }
-
-    var jsonString = jsonBuilder.toString();
-
-    try {
-      var objectMapper = new ObjectMapper();
-      return objectMapper.readValue(
-          jsonString,
-          new TypeReference<List<InvoicesTableReport>>() {
-          });
-    } catch (Exception e) {
-      this.logger.error("Error getting report: {}", e);
-      throw new SystemAPIException("Error obteniendo reporte", e.getCause());
-    }
+    return reportResultSet.stream().map(row -> {
+      InvoicesTableReport report = new InvoicesTableReport();
+      report.setIncomingNumber((Integer) row.get("NOTA_INGRESO"));
+      report.setStartDate((String) row.get("FCH_INICIO"));
+      report.setEndDate((String) row.get("FCH_FIN"));
+      report.setConcept((String) row.get("CONCEPTO"));
+      report.setPricePerUnit((BigDecimal) row.get("MONTO_UNITARIO"));
+      report.setClientName((String) row.get("CLIENTE"));
+      report.setAnalytic((String) row.get("ANALITICA"));
+      report.setIgv((BigDecimal) row.get("IGV"));
+      report.setTotalToPay((BigDecimal) row.get("TOTAL_PAGAR"));
+      report.setContact((String) row.get("CONTACTO"));
+      report.setInvoiceNumber((String) row.get("NUM_FACTURA"));
+      report.setCurrencyName((String) row.get("MONEDA"));
+      report.setCollaborator((String) row.get("COLABORADOR"));
+      report.setObservation((String) row.get("OBSERVACION"));
+      return report;
+    }).collect(Collectors.toList());
   }
 
 }
