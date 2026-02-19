@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.mappers;
+package org.app.facturacion.application.mappers;
 
 import java.io.InputStream;
 import java.util.List;
