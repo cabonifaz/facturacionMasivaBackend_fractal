@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.api.adapter.bsale.dto;
+package org.app.facturacion.adapters.bsale.dto;
 
 import org.eclipse.jdt.annotation.NonNull;
 

@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.api.dto;
+package org.app.facturacion.adapters.bsale.dto;
 
 import lombok.Data;
 

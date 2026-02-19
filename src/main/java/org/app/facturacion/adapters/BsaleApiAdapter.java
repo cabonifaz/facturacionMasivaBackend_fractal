@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.api.adapter;
+package org.app.facturacion.adapters;
 
 import java.math.BigDecimal;
 import java.math.RoundingMode;
@@ -10,11 +10,11 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.app.facturacion.adapters.bsale.config.InvoiceConfig;
+import org.app.facturacion.adapters.bsale.dto.BsaleDocumentDetailDTO;
+import org.app.facturacion.adapters.bsale.dto.BsaleInvoiceResponseDTO;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.models.InvoiceHeader;
-import org.app.facturacion.infrastructure.api.adapter.bsale.config.InvoiceConfig;
-import org.app.facturacion.infrastructure.api.adapter.bsale.dto.BsaleDocumentDetailDTO;
-import org.app.facturacion.infrastructure.api.dto.BsaleInvoiceResponseDTO;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

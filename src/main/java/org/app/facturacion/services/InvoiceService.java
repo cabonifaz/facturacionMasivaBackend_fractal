@@ -8,6 +8,7 @@ import java.util.List;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.Executor;
 
+import org.app.facturacion.adapters.BsaleApiAdapter;
 import org.app.facturacion.application.utilities.ExcelHelper;
 import org.app.facturacion.application.utilities.ZipSysHelper;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
@@ -19,7 +20,6 @@ import org.app.facturacion.domain.models.InvoiceRow;
 import org.app.facturacion.domain.models.Workload;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.app.facturacion.domain.port.InvoiceHistoryRepositoryPort;
-import org.app.facturacion.infrastructure.api.adapter.BsaleApiAdapter;
 import org.app.facturacion.infrastructure.mappers.ExcelReader;
 import org.app.facturacion.repositories.InvoiceBatchRepository;
 import org.eclipse.jdt.annotation.NonNull;

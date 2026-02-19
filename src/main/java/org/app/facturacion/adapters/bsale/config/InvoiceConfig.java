@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.api.adapter.bsale.config;
+package org.app.facturacion.adapters.bsale.config;
 
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.context.annotation.Configuration;
