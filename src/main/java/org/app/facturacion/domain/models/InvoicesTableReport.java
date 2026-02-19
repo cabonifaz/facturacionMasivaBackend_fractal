@@ -5,23 +5,18 @@ import java.math.BigDecimal;
 
 @Data
 public class InvoicesTableReport {
-
-  private String clientName;
-  private String incommingNumber;
-  private String orderNumber;
+  private Integer incomingNumber;
   private String startDate;
   private String endDate;
   private String concept;
-  private String analytic;
-
-  private String currencyName;
   private BigDecimal pricePerUnit;
+  private String clientName;
+  private String analytic;
   private BigDecimal igv;
   private BigDecimal totalToPay;
-
   private String contact;
   private String invoiceNumber;
-  private Long documentId;
+  private String currencyName;
   private String collaborator;
   private String observation;
 }
