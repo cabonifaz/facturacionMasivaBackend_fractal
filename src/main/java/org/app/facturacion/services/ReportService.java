@@ -156,12 +156,4 @@ public class ReportService {
     return dto;
   }
 
-  public byte[] createSendEmailReport(MultipartFile zipFile) {
-
-    this.logger.info("File received: {}", zipFile.getOriginalFilename());
-    this.logger.info("File size: {} bytes", zipFile.getSize());
-
-    return null;
-  }
-
 }
