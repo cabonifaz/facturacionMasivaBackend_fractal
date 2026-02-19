@@ -21,7 +21,7 @@ import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.app.facturacion.domain.port.InvoiceHistoryRepositoryPort;
 import org.app.facturacion.infrastructure.api.adapter.BsaleApiAdapter;
 import org.app.facturacion.infrastructure.mappers.ExcelReader;
-import org.app.facturacion.infrastructure.repositories.InvoiceBatchRepository;
+import org.app.facturacion.repositories.InvoiceBatchRepository;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

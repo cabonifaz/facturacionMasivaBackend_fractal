@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.repositories;
+package org.app.facturacion.repositories;
 
 import java.math.BigDecimal;
 import java.sql.Types;

@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.repositories;
+package org.app.facturacion.repositories;
 
 import java.util.ArrayList;
 import java.util.Collections;
