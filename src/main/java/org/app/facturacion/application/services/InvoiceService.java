@@ -15,8 +15,8 @@ import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
 import org.app.facturacion.domain.models.FileModelDTO;
 import org.app.facturacion.domain.models.InvoiceHeader;
-import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.InvoiceRow;
+import org.app.facturacion.domain.models.Workload;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.app.facturacion.domain.port.InvoiceHistoryRepositoryPort;
 import org.app.facturacion.infrastructure.api.adapter.BsaleApiAdapter;
@@ -97,7 +97,7 @@ public class InvoiceService {
    * 
    * @return Retorna true si el proceso se completa correctamente
    */
-  public BaseAPIResponse<Boolean> pregenerateHeaders(@NonNull InvoicePreGenerate rGenerate) {
+  public BaseAPIResponse<Boolean> pregenerateHeaders(@NonNull Workload rGenerate) {
 
     Boolean response = this.repository.pregenerateInvoices(rGenerate, "system-user");
 

@@ -2,9 +2,9 @@ package org.app.facturacion.domain.port;
 
 import java.util.List;
 
-import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.InvoiceRow;
 import org.app.facturacion.domain.models.InvoicesTableReport;
+import org.app.facturacion.domain.models.Workload;
 import org.eclipse.jdt.annotation.NonNull;
 
 public interface InvoiceBatchRepositoryPort {
@@ -32,7 +32,7 @@ public interface InvoiceBatchRepositoryPort {
    * 
    * @return Retorna true si el procedimiento termina con éxito
    */
-  Boolean pregenerateInvoices(@NonNull InvoicePreGenerate reqGenerate, @NonNull String username);
+  Boolean pregenerateInvoices(@NonNull Workload reqGenerate, @NonNull String username);
 
   List<InvoicesTableReport> getTableReportByWorkload(@NonNull String workload);
 

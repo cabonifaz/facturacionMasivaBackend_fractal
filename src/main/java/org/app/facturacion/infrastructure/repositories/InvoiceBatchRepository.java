@@ -9,9 +9,9 @@ import java.util.Map;
 import java.util.stream.Collectors;
 
 import org.app.facturacion.domain.exceptions.SystemAPIException;
-import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.InvoiceRow;
 import org.app.facturacion.domain.models.InvoicesTableReport;
+import org.app.facturacion.domain.models.Workload;
 import org.app.facturacion.domain.port.InvoiceBatchRepositoryPort;
 import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
@@ -179,9 +179,9 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
   }
 
   @Override
-  public Boolean pregenerateInvoices(@NonNull InvoicePreGenerate reqGenerate, @NonNull String username) {
+  public Boolean pregenerateInvoices(@NonNull Workload workload, @NonNull String username) {
 
-    this.logger.info("Pre-generate for workload: {}", reqGenerate.getWorkload());
+    this.logger.info("Pre-generate for workload: {}", workload.getWorkloadId());
 
     final String SP_NAME = "SPP_FACTURA_CABECERA_GEN";
     SimpleJdbcCall jSimpleJdbcCall = new SimpleJdbcCall(jdbcTemplate);
@@ -191,7 +191,7 @@ public class InvoiceBatchRepository implements InvoiceBatchRepositoryPort {
 
     Map<String, Object> result = jSimpleJdbcCall.execute(
         username,
-        reqGenerate.getWorkload());
+        workload.getWorkloadId());
 
     this.logger.debug("Data from DB: {}", result);
 

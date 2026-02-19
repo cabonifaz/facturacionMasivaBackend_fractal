@@ -2,7 +2,6 @@ package org.app.facturacion.infrastructure.controller;
 
 import org.app.facturacion.application.services.InvoiceService;
 import org.app.facturacion.domain.models.BaseAPIResponse;
-import org.app.facturacion.domain.models.InvoicePreGenerate;
 import org.app.facturacion.domain.models.Workload;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,11 +54,11 @@ public class InvoiceController {
 
   @PostMapping("/pre-generate")
   public BaseAPIResponse<Boolean> pregenerateInvoices(
-      @RequestBody() @NonNull InvoicePreGenerate request) {
+      @RequestBody() @NonNull Workload workload) {
 
-    this.logger.debug("Data from client: {}", request);
+    this.logger.debug("Data from client: {}", workload.getWorkloadId());
 
-    BaseAPIResponse<Boolean> rs = this.service.pregenerateHeaders(request);
+    BaseAPIResponse<Boolean> rs = this.service.pregenerateHeaders(workload);
 
     return BaseAPIResponse.success(rs.getMessage(), rs.getData());
   }
