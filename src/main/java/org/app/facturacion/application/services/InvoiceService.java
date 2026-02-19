@@ -48,7 +48,7 @@ public class InvoiceService {
       InvoiceHistoryRepositoryPort rp,
       EmailService emailService,
       @Qualifier("taskExecutor") Executor taskExecutor,
-      @Value("NOTIFY_REPORT_EMAIL") String notifyTo) {
+      @Value("${NOTIFY_REPORT_EMAIL}") String notifyTo) {
     this.repository = repo;
     this.bsaleApiAdapter = adapter;
     this.invoiceHisRp = rp;
