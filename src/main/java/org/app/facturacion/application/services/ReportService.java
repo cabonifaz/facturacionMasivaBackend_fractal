@@ -1,8 +1,11 @@
 package org.app.facturacion.application.services;
 
 import java.io.ByteArrayOutputStream;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
@@ -115,7 +118,13 @@ public class ReportService {
     dto.setCompany(first.getProvider() != null ? first.getProvider() : "CELER SAC");
     dto.setCollaborator(first.getResourceName());
     dto.setProfile(first.getResourceProfile());
-    dto.setEmissionDate("Feb-03"); // Harcodeado por ahora, debería venir como dato
+
+    // Get current Date
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es", "ES"));
+    String raw = YearMonth.now().format(formatter);
+    String emissionDate = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
+
+    dto.setEmissionDate(emissionDate);
 
     // Details
     List<ReportActivityDTO.ReportDetails> detailsList = new ArrayList<>();
