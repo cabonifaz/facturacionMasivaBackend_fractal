@@ -26,6 +26,7 @@ import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.MediaType;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -39,18 +40,21 @@ public class InvoiceService {
   private final InvoiceHistoryRepositoryPort invoiceHisRp;
   private final EmailService emailService;
   private final Executor taskExecutor;
+  private final String notifyTo;
 
   public InvoiceService(
       InvoiceBatchRepository repo,
       BsaleApiAdapter adapter,
       InvoiceHistoryRepositoryPort rp,
       EmailService emailService,
-      @Qualifier("taskExecutor") Executor taskExecutor) {
+      @Qualifier("taskExecutor") Executor taskExecutor,
+      @Value("NOTIFY_REPORT_EMAIL") String notifyTo) {
     this.repository = repo;
     this.bsaleApiAdapter = adapter;
     this.invoiceHisRp = rp;
     this.emailService = emailService;
     this.taskExecutor = taskExecutor;
+    this.notifyTo = notifyTo;
   }
 
   /**
@@ -188,7 +192,7 @@ public class InvoiceService {
       var attachments = List.of(invoicesZip, reportExcelFile);
 
       this.emailService.sendEmailWithAttachments(
-          "jean.velasquez@fractalservicios.pe",
+          this.notifyTo,
           "Reporte de facturacion",
           reportMessage,
           false,
