@@ -1,6 +1,7 @@
 package org.app.facturacion.application.services;
 
 import java.io.ByteArrayOutputStream;
+import java.time.LocalDate;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -120,8 +121,8 @@ public class ReportService {
     dto.setProfile(first.getResourceProfile());
 
     // Get current Date
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yy", new Locale("es", "ES"));
-    String raw = YearMonth.now().format(formatter);
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-dd", new Locale("es", "ES"));
+    String raw = LocalDate.now().format(formatter);
     String emissionDate = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
 
     dto.setEmissionDate(emissionDate);
