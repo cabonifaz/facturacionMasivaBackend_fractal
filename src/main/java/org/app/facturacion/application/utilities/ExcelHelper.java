@@ -2,9 +2,12 @@ package org.app.facturacion.application.utilities;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.util.LinkedHashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.poi.ss.usermodel.BorderStyle;
+import org.apache.poi.ss.usermodel.DataFormat;
 import org.apache.poi.ss.usermodel.FillPatternType;
 import org.apache.poi.ss.usermodel.Font;
 import org.apache.poi.ss.usermodel.IndexedColors;
@@ -26,89 +29,92 @@ public class ExcelHelper {
    * @return byte[] Los bytes del archivo Excel
    * @throws IOException
    */
+  @SuppressWarnings("null")
   public static byte[] generateInvoiceReport(List<InvoicesTableReport> invoiceData) throws IOException {
-
     Workbook workbook = new XSSFWorkbook();
     var sheet = workbook.createSheet("Reporte Facturas");
-
     var headerStyle = (XSSFCellStyle) workbook.createCellStyle();
 
-    // Background color
     byte[] rgb = new byte[] { (byte) 0, (byte) 176, (byte) 240 };
     var backColor = new XSSFColor(rgb, new DefaultIndexedColorMap());
     headerStyle.setFillForegroundColor(backColor);
     headerStyle.setFillPattern(FillPatternType.SOLID_FOREGROUND);
 
-    // Font
     Font headerFont = workbook.createFont();
     headerFont.setBold(true);
     headerFont.setColor(IndexedColors.WHITE.getIndex());
     headerStyle.setFont(headerFont);
 
-    // Borders
     headerStyle.setBorderBottom(BorderStyle.THIN);
     headerStyle.setBottomBorderColor(IndexedColors.BLACK.getIndex());
 
-    Integer rowNum = 1;
-    String[] headers = {
-        "Cliente",
-        "Analítica",
-        "OC/OS",
-        "NI/CS",
-        "Colaborador",
-        "Inicio",
-        "Fin",
-        "Concepto",
-        "Moneda",
-        "Monto",
-        "IGV",
-        "Total",
-        "Contacto",
-        "N. Factura"
-    };
+    // Numeric cell style
+    var numericStyle = (XSSFCellStyle) workbook.createCellStyle();
+    DataFormat dataFormat = workbook.createDataFormat();
+    numericStyle.setDataFormat(dataFormat.getFormat("#,##0.00"));
 
+    // Column name -> position
+    Map<String, Integer> headersMap = new LinkedHashMap<>();
+    headersMap.put("Cliente", 0);
+    headersMap.put("Analítica", 1);
+    headersMap.put("OC/OS", 2);
+    headersMap.put("NI/CS", 3);
+    headersMap.put("Colaborador", 4);
+    headersMap.put("Inicio", 5);
+    headersMap.put("Fin", 6);
+    headersMap.put("Concepto", 7);
+    headersMap.put("Moneda", 8);
+    headersMap.put("Monto", 9);
+    headersMap.put("IGV", 10);
+    headersMap.put("Total", 11);
+    headersMap.put("Contacto", 12);
+    headersMap.put("N. Factura", 13);
+
+    // Create headers
     var headerRow = sheet.createRow(0);
-    for (int i = 0; i < headers.length; i++) {
-      var cell = headerRow.createCell(i);
-      cell.setCellValue(headers[i]);
+    headersMap.forEach((name, col) -> {
+      var cell = headerRow.createCell(col);
+      cell.setCellValue(name);
       cell.setCellStyle(headerStyle);
-    }
+    });
 
+    int rowNum = 1;
     for (var data : invoiceData) {
       var row = sheet.createRow(rowNum++);
+      row.createCell(headersMap.get("Cliente")).setCellValue(data.getClientName());
+      row.createCell(headersMap.get("Analítica")).setCellValue(data.getAnalytic());
+      row.createCell(headersMap.get("OC/OS")).setCellValue(data.getObservation());
+      row.createCell(headersMap.get("NI/CS")).setCellValue(data.getIncomingNumber());
+      row.createCell(headersMap.get("Colaborador")).setCellValue(data.getCollaborator());
+      row.createCell(headersMap.get("Inicio")).setCellValue(data.getStartDate());
+      row.createCell(headersMap.get("Fin")).setCellValue(data.getEndDate());
+      row.createCell(headersMap.get("Concepto")).setCellValue(data.getConcept());
+      row.createCell(headersMap.get("Moneda")).setCellValue(data.getCurrencyName());
 
-      row.createCell(0).setCellValue("BANBIF");
-      row.createCell(1).setCellValue("OUT.MTT");
-      row.createCell(2).setCellValue(data.getOrderNumber());
-      row.createCell(3).setCellValue(data.getIncommingNumber());
+      // Numeric cells
+      var montoCell = row.createCell(headersMap.get("Monto"));
+      montoCell.setCellValue(data.getPricePerUnit().doubleValue());
+      montoCell.setCellStyle(numericStyle);
 
-      row.createCell(4).setCellValue(data.getCollaborator());
-      row.createCell(5).setCellValue(data.getStartDate());
-      row.createCell(6).setCellValue(data.getEndDate());
-      row.createCell(7).setCellValue(data.getConcept());
+      var igvCell = row.createCell(headersMap.get("IGV"));
+      igvCell.setCellValue(data.getIgv().doubleValue());
+      igvCell.setCellStyle(numericStyle);
 
-      row.createCell(8).setCellValue(data.getCurrencyName());
-      row.createCell(9).setCellValue(data.getPricePerUnit().toPlainString());
-      row.createCell(10).setCellValue(data.getIgv().toPlainString());
+      var totalCell = row.createCell(headersMap.get("Total"));
+      totalCell.setCellValue(data.getTotalToPay().doubleValue());
+      totalCell.setCellStyle(numericStyle);
 
-      var subTotal = data.getPricePerUnit().add(data.getIgv());
-
-      row.createCell(11).setCellValue(subTotal.toPlainString());
-
-      row.createCell(12).setCellValue(data.getContact());
-      row.createCell(13).setCellValue(data.getInvoiceNumber());
+      row.createCell(headersMap.get("Contacto")).setCellValue(data.getContact());
+      row.createCell(headersMap.get("N. Factura")).setCellValue(data.getInvoiceNumber());
     }
 
     try (var outputStream = new ByteArrayOutputStream()) {
-      for (int i = 0; i < headers.length; i++)
-        sheet.autoSizeColumn(i);
-
+      headersMap.values().forEach(sheet::autoSizeColumn);
       workbook.write(outputStream);
       return outputStream.toByteArray();
     } finally {
       workbook.close();
     }
-
   }
 
 }
