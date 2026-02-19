@@ -1,4 +1,4 @@
-package org.app.facturacion.infrastructure.controller;
+package org.app.facturacion.controller;
 
 import org.app.facturacion.services.ReportService;
 import org.slf4j.Logger;
