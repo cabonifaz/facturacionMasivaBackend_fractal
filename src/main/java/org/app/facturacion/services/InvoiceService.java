@@ -11,6 +11,7 @@ import java.util.concurrent.Executor;
 import org.app.facturacion.adapters.BsaleApiAdapter;
 import org.app.facturacion.application.mappers.ExcelReader;
 import org.app.facturacion.application.utilities.ExcelHelper;
+import org.app.facturacion.application.utilities.MailContentBuilder;
 import org.app.facturacion.application.utilities.ZipSysHelper;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
@@ -41,8 +42,10 @@ public class InvoiceService {
   private final EmailService emailService;
   private final Executor taskExecutor;
   private final String notifyTo;
+  private final MailContentBuilder mailContentBuilder;
 
   public InvoiceService(
+      MailContentBuilder mailContentBuilder,
       InvoiceBatchRepository repo,
       BsaleApiAdapter adapter,
       InvoiceHistoryRepositoryPort rp,
@@ -55,6 +58,7 @@ public class InvoiceService {
     this.emailService = emailService;
     this.taskExecutor = taskExecutor;
     this.notifyTo = notifyTo;
+    this.mailContentBuilder = mailContentBuilder;
   }
 
   /**
@@ -191,12 +195,18 @@ public class InvoiceService {
       // Send email report
       var attachments = List.of(invoicesZip, reportExcelFile);
 
+      // Load message body
+      String htmlBody = this.mailContentBuilder.buildInvoiceReportHtml(
+          "SISTEMA DE FACTURACION FMI",
+          reportMessage);
+
       this.emailService.sendEmailWithAttachments(
           this.notifyTo,
           "Reporte de facturacion",
-          reportMessage,
-          false,
+          htmlBody,
+          true,
           attachments);
+
     } catch (Exception e) {
       this.logger.error("Error sendig report", e);
     }
