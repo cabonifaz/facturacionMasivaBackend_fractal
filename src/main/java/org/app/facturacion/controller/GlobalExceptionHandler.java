@@ -1,5 +1,6 @@
 package org.app.facturacion.controller;
 
+import org.app.facturacion.domain.exceptions.AuthorizationException;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
@@ -16,6 +17,14 @@ import org.springframework.web.bind.annotation.ResponseStatus;
 public class GlobalExceptionHandler {
 
   private static final Logger logger = LoggerFactory.getLogger(GlobalExceptionHandler.class);
+
+  @SuppressWarnings("null")
+  @ExceptionHandler(AuthorizationException.class)
+  @ResponseStatus(HttpStatus.INTERNAL_SERVER_ERROR)
+  public BaseAPIResponse<?> handleAuthorizationException(AuthorizationException e) {
+    String msg = e.getMessage() == null ? "No se determino el motivo del error" : e.getMessage();
+    return BaseAPIResponse.error(msg);
+  }
 
   @SuppressWarnings("null")
   @ExceptionHandler(SystemAPIException.class)
