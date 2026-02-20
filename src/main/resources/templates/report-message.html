@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <meta charset="utf-8">
+  <style>
+    body {
+      font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif;
+      background-color: #f9f9f9;
+      margin: 0;
+      padding: 0;
+    }
+
+    .container {
+      max-width: 600px;
+      margin: 20px auto;
+      background-color: #ffffff;
+      border-radius: 8px;
+      overflow: hidden;
+      border: 1px solid #e0e0e0;
+      box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+    }
+
+    .header {
+      background-color: #2D88C4;
+      color: #ffffff;
+      padding: 30px;
+      text-align: center;
+    }
+
+    .content {
+      padding: 40px;
+      color: #333333;
+      line-height: 1.6;
+      text-align: center;
+    }
+
+    .footer {
+      background-color: #ffffff;
+      padding: 20px;
+      text-align: center;
+      font-size: 12px;
+      color: #777777;
+      border-top: 5px solid #FFC107;
+    }
+
+    .badge {
+      display: inline-block;
+      padding: 6px 15px;
+      background-color: #FFC107;
+      color: #333333;
+      border-radius: 50px;
+      font-weight: bold;
+      font-size: 14px;
+      margin-bottom: 20px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      letter-spacing: 1px;
+    }
+
+    .highlight {
+      color: #2D88C4;
+      font-weight: bold;
+      font-size: 18px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <div class="header">
+      <h1 th:text="${title}">SISTEMA NOTIFIACION</h1>
+    </div>
+    <div class="content">
+      <div class="badge">PROCESO COMPLETADO</div>
+      <p style="font-size: 18px;"><strong>Buen día,</strong></p>
+      <p>Este es un mensaje automatizado para informarte que:</p>
+      <p class="highlight" th:text="${message}">Mensaje por defecto</p>
+    </div>
+    <div class="footer">
+      <p>Mensaje generado automáticamente por <strong>Fractal N8N</strong></p>
+      <p>© 2026 | FRACTAL</p>
+    </div>
+  </div>
+</body>
+
+</html>
