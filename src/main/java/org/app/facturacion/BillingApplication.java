@@ -9,12 +9,12 @@ import java.time.Instant;
 
 @EnableAsync
 @SpringBootApplication
-public class FacturacionClientesApplication {
+public class BillingApplication {
 
 	private static final Instant startTime = Instant.now();
 
 	public static void main(String[] args) {
-		SpringApplication.run(FacturacionClientesApplication.class, args);
+		SpringApplication.run(BillingApplication.class, args);
 	}
 
 	@Bean
