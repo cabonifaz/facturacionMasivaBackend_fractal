@@ -19,6 +19,7 @@ import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.FileModelDTO;
 import org.app.facturacion.domain.models.ReportActivityDTO;
+import org.eclipse.jdt.annotation.NonNull;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -77,26 +78,34 @@ public class ReportService {
     List<CompletableFuture<FileModelDTO>> futures = groupedData.entrySet().stream()
         .map(entry -> CompletableFuture.supplyAsync(() -> {
 
-          GroupingKey key = entry.getKey();
-          ReportActivityDTO pdfDto = mapToDto(entry.getValue());
+          try {
+            GroupingKey key = entry.getKey();
+            ReportActivityDTO pdfDto = this.mapToDto(entry.getValue());
 
-          this.logger.info("Generating PDF for: {}", pdfDto.getCollaborator());
-          byte[] pdfBytes = pdfService.generatePdf(pdfDto);
+            this.logger.info("Generating PDF for: {}", pdfDto.getCollaborator());
+            byte[] pdfBytes = pdfService.generatePdf(pdfDto);
 
-          // Create file name
-          String fileName = String.format("CELER - %s - %s.pdf", key.ocOs(), pdfDto.getCollaborator())
-              .replaceAll("[\\\\/:*?\"<>|]", "_");
+            // Create file name
+            String fileName = String.format("CELER - %s - %s.pdf", key.ocOs(), pdfDto.getCollaborator())
+                .replaceAll("[\\\\/:*?\"<>|]", "_");
 
-          return FileModelDTO.builder()
-              .filename(fileName)
-              .fileBytes(pdfBytes)
-              .build();
+            return FileModelDTO.builder()
+                .filename(fileName)
+                .fileBytes(pdfBytes)
+                .build();
+          } catch (Exception e) {
+            this.logger.error("Error generating report for {}: {}",
+                entry.getKey().collaborator(), e.getMessage());
+            return null;
+          }
+
         }, taskExecutor)) // This taskExecutor can create 5-10 reports, configuration at AsyncConfig
         .toList();
 
     // Wait for list of promises
-    List<FileModelDTO> completedPdfs = futures.stream()
+    List<@NonNull FileModelDTO> completedPdfs = futures.stream()
         .map(CompletableFuture::join)
+        .filter(java.util.Objects::nonNull)
         .toList();
 
     this.logger.info("All {} PDFs generated. Starting ZIP compression...", completedPdfs.size());
