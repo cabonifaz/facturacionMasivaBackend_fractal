@@ -27,7 +27,7 @@ public class ReportController {
   public ResponseEntity<byte[]> createActivityReport(
       @RequestParam("file") MultipartFile file) {
     this.logger.info("Creating report from: {}", file.getOriginalFilename());
-    byte[] zipFile = this.reportService.generateActivityReport(file);
+    byte[] zipFile = this.reportService.generateAllPdfsAsync(file);
     return ResponseEntity.ok()
         .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"reportes.zip\"")
         .contentType(MediaType.APPLICATION_OCTET_STREAM)

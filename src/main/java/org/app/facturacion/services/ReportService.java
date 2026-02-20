@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.Executor;
 import java.util.stream.Collectors;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -15,24 +17,24 @@ import org.app.facturacion.application.mappers.ActivityReportRow;
 import org.app.facturacion.application.mappers.ExcelReader;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
+import org.app.facturacion.domain.models.FileModelDTO;
 import org.app.facturacion.domain.models.ReportActivityDTO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
+import lombok.AllArgsConstructor;
+
 @Service
+@AllArgsConstructor
 public class ReportService {
 
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
   private final PDFService pdfService;
+  private final Executor taskExecutor;
 
-  public ReportService(PDFService pdfService) {
-    this.pdfService = pdfService;
-  }
-
-  @SuppressWarnings("null")
-  public byte[] generateActivityReport(MultipartFile file) {
+  public byte[] generateAllPdfsAsync(MultipartFile file) {
 
     this.logger.info("Processing file in service: {}", file.getOriginalFilename());
 
@@ -44,6 +46,7 @@ public class ReportService {
     record GroupingKey(Integer incommingNote, String ocOs, String invoiceSerial, String collaborator) {
     }
 
+    @SuppressWarnings("null")
     Map<GroupingKey, List<ActivityReportRow>> groupedData = rows.stream()
         .collect(Collectors.groupingBy(row -> new GroupingKey(
             row.getIncommingNote(),
@@ -68,37 +71,51 @@ public class ReportService {
       }
     });
 
-    try (ByteArrayOutputStream baos = new ByteArrayOutputStream();
-        ZipOutputStream zos = new ZipOutputStream(baos)) {
+    this.logger.info("Creating reports files...");
 
-      for (Map.Entry<GroupingKey, List<ActivityReportRow>> entry : groupedData.entrySet()) {
-        GroupingKey key = entry.getKey();
-        List<ActivityReportRow> groupRows = entry.getValue();
+    // List of promises,this can create multiples reports at the same time
+    List<CompletableFuture<FileModelDTO>> futures = groupedData.entrySet().stream()
+        .map(entry -> CompletableFuture.supplyAsync(() -> {
 
-        ReportActivityDTO pdfDto = mapToDto(groupRows);
+          GroupingKey key = entry.getKey();
+          ReportActivityDTO pdfDto = mapToDto(entry.getValue());
 
-        // Generate PDF
-        byte[] pdfBytes = pdfService.generatePdf(pdfDto);
+          this.logger.info("Generating PDF for: {}", pdfDto.getCollaborator());
+          byte[] pdfBytes = pdfService.generatePdf(pdfDto);
 
-        // Add to ZIP
-        var fileName = new StringBuilder()
-            .append("CELER")
-            .append(" - ")
-            .append(key.ocOs)
-            .append(" - ")
-            .append(pdfDto.getCollaborator())
-            .append(".pdf")
-            .toString();
+          // Create file name
+          String fileName = String.format("CELER - %s - %s.pdf", key.ocOs(), pdfDto.getCollaborator())
+              .replaceAll("[\\\\/:*?\"<>|]", "_");
 
-        fileName = fileName.replaceAll("[\\\\/:*?\"<>|]", "_");
+          return FileModelDTO.builder()
+              .filename(fileName)
+              .fileBytes(pdfBytes)
+              .build();
+        }, taskExecutor)) // This taskExecutor can create 5-10 reports, configuration at AsyncConfig
+        .toList();
 
-        ZipEntry zipEntry = new ZipEntry(fileName);
+    // Wait for list of promises
+    List<FileModelDTO> completedPdfs = futures.stream()
+        .map(CompletableFuture::join)
+        .toList();
+
+    this.logger.info("All {} PDFs generated. Starting ZIP compression...", completedPdfs.size());
+
+    // Compress files
+    try (var baos = new ByteArrayOutputStream();
+        var zos = new ZipOutputStream(baos)) {
+
+      for (FileModelDTO pdfFile : completedPdfs) {
+        ZipEntry zipEntry = new ZipEntry(pdfFile.getFilename());
         zos.putNextEntry(zipEntry);
-        zos.write(pdfBytes);
+        zos.write(pdfFile.getFileBytes());
         zos.closeEntry();
       }
 
       zos.finish();
+
+      this.logger.info("Files compressed");
+
       return baos.toByteArray();
 
     } catch (Exception e) {
