@@ -25,11 +25,20 @@ public class HealthController {
   public ResponseEntity<Object> checkHealth() {
     String dbStatus = checkDatabase();
     String uptime = calculateUptime();
+    String memoryUsage = this.getMemoryUsage();
 
-    record CheckResponse(String status, String uptime, String dbStatus) {
+    record CheckResponse(
+        String status,
+        String uptime,
+        String dbStatus,
+        String memoryUsage) {
     }
 
-    var response = new CheckResponse("OK", uptime, dbStatus);
+    var response = new CheckResponse(
+        "OK",
+        uptime,
+        dbStatus,
+        memoryUsage);
 
     return ResponseEntity.ok(response);
   }
@@ -50,4 +59,16 @@ public class HealthController {
     long seconds = duration.toSecondsPart();
     return String.format("%02d:%02d:%02d", hours, minutes, seconds);
   }
+
+  private String getMemoryUsage() {
+    Runtime runtime = Runtime.getRuntime();
+    long totalMemory = runtime.totalMemory() / (1024 * 1024);
+    long freeMemory = runtime.freeMemory() / (1024 * 1024);
+    long usedMemory = totalMemory - freeMemory;
+    long maxMemory = runtime.maxMemory() / (1024 * 1024);
+
+    return String.format("Used: %dMB | Reserved: %dMB | Max: %dMB",
+        usedMemory, totalMemory, maxMemory);
+  }
+
 }
