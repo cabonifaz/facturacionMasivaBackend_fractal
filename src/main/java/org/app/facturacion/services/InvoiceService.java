@@ -72,6 +72,10 @@ public class InvoiceService {
     ExcelReader reader = new ExcelReader();
     List<InvoiceRow> invoices = reader.readInvoiceSheet(file);
 
+    if (invoices == null || invoices.isEmpty()) {
+      throw new ValidationAPIException("No se pudo extraer información del archivo subido");
+    }
+
     // Guardar en la base de datos
     String workLoadId = this.repository.addOrUpdateInvoiceWorkspace(invoices, "system-user");
 
