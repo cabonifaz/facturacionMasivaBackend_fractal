@@ -32,7 +32,6 @@
       background-color: #042354;
       font-weight: bold;
       color: white;
-      /* Asegura texto blanco en cabecera */
     }
 
     .title-header {
@@ -41,7 +40,6 @@
       color: #042354;
     }
 
-    /* Estilo para la imagen del logo */
     .logo-img {
       width: 150px;
       height: auto;
@@ -60,7 +58,6 @@
       vertical-align: top;
     }
 
-    /* Estilos para las Tablas de Datos de Cabecera */
     .data-table {
       width: 100%;
       border-collapse: collapse;
@@ -89,9 +86,13 @@
       color: #F7D334;
     }
 
-    /* CRUCIAL: Para que los saltos de línea del Excel se vean en el PDF */
     .activity-text {
       white-space: pre-wrap;
+    }
+
+    /* Nueva clase para igualar anchura de columnas específicas */
+    .col-shared-width {
+      width: 25%;
     }
   </style>
 </head>
@@ -156,8 +157,8 @@
         <th>OC/OS</th>
         <th>Periodo</th>
         <th>Nº Iniciativa</th>
-        <th>Actividades realizadas</th>
-        <th>Detalle Entregable</th>
+        <th class="col-shared-width">Actividades realizadas</th>
+        <th class="col-shared-width">Detalle Entregable</th>
         <th>Gerente</th>
         <th>Gerencia</th>
       </tr>
@@ -182,7 +183,7 @@
 
   <table style="width: 100%; margin-top: 16px; text-align: center;">
     <tr style="margin: 0 auto;">
-      <td><img src="manager-signature.jpg" style="width: 200px; height: 100px;" alt="Firma gerente" /></td>
+      <td><img src="manager-signature.jpg" style="width: 150px; height: 58px;" alt="Firma gerente" /></td>
     </tr>
     <tr>
       <td>
