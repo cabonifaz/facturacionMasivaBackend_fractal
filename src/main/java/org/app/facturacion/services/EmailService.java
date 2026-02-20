@@ -11,19 +11,18 @@ import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
 import jakarta.mail.util.ByteArrayDataSource;
+import lombok.AllArgsConstructor;
 
 @Service
+@AllArgsConstructor
 public class EmailService {
 
   private final JavaMailSender mailSender;
   private final Logger logger = LoggerFactory.getLogger(this.getClass());
-
-  public EmailService(JavaMailSender mailSender) {
-    this.mailSender = mailSender;
-  }
 
   /**
    * Envía en email al distanario con múltiples archivos adjuntos
