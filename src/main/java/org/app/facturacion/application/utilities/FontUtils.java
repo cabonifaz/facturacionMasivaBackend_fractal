@@ -1,12 +1,18 @@
 package org.app.facturacion.application.utilities;
 
+import java.io.ByteArrayInputStream;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 
 import org.eclipse.jdt.annotation.NonNull;
 import org.springframework.stereotype.Component;
 
 import com.openhtmltopdf.pdfboxout.PdfRendererBuilder;
+
+import jakarta.annotation.PostConstruct;
 
 @Component
 public class FontUtils {
@@ -18,6 +24,9 @@ public class FontUtils {
       PdfRendererBuilder.FontStyle style) {
   }
 
+  // Cache fonts in memory, to avoid loading everytime
+  private final Map<String, byte[]> fontCache = new ConcurrentHashMap<>();
+
   private final List<@NonNull FontDefinition> FONTS = List.of(
       new FontDefinition("/fonts/arial.ttf", "Arial", 400, PdfRendererBuilder.FontStyle.NORMAL),
       new FontDefinition("/fonts/arialbd.ttf", "Arial", 700, PdfRendererBuilder.FontStyle.NORMAL),
@@ -25,22 +34,25 @@ public class FontUtils {
       new FontDefinition("/fonts/arialbi.ttf", "Arial", 700, PdfRendererBuilder.FontStyle.ITALIC),
       new FontDefinition("/fonts/zapfdingbats.ttf", "ZapfDingbats", 400, PdfRendererBuilder.FontStyle.NORMAL));
 
-  public void registerFonts(PdfRendererBuilder builder) {
+  @PostConstruct
+  public void init() {
     for (FontDefinition font : FONTS) {
-      builder.useFont(
-          () -> getFontStream(font.resourcePath()),
-          font.fontFamily(),
-          font.weight(),
-          font.style(),
-          true);
+      try (InputStream is = getClass().getResourceAsStream(font.resourcePath())) {
+        if (is == null)
+          throw new RuntimeException("Font not found: " + font.resourcePath());
+        fontCache.put(font.resourcePath(), is.readAllBytes());
+      } catch (IOException e) {
+        throw new RuntimeException("Error loadign font in memory", e);
+      }
     }
   }
 
-  private InputStream getFontStream(String resourcePath) {
-    InputStream stream = getClass().getResourceAsStream(resourcePath);
-    if (stream == null) {
-      throw new IllegalStateException("Font not found at classpath: " + resourcePath);
+  public void registerFonts(PdfRendererBuilder builder) {
+    for (FontDefinition font : FONTS) {
+      byte[] data = fontCache.get(font.resourcePath());
+      // Usamos los bytes de la memoria, ¡ya no hay lectura de disco!
+      builder.useFont(() -> new ByteArrayInputStream(data),
+          font.fontFamily(), font.weight(), font.style(), true);
     }
-    return stream;
   }
 }
