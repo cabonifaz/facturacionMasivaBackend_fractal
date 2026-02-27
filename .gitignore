@@ -34,3 +34,6 @@ build/
 
 ### Junie AI #3
 .junie
+
+# .env
+*.env
