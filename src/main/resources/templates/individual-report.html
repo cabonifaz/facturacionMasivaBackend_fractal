@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<head>
+  <style>
+    @page {
+      size: A4 landscape;
+      margin: 1cm;
+    }
+
+    body {
+      font-family: Arial;
+      font-size: 10pt;
+    }
+
+    /* Estilos generales */
+    .header-table,
+    .main-table {
+      width: 100%;
+      border-collapse: collapse;
+      margin-bottom: 20px;
+    }
+
+    .main-table th,
+    .main-table td {
+      border: 1px solid black;
+      padding: 5px;
+      vertical-align: top;
+    }
+
+    .header-bg {
+      background-color: #042354;
+      font-weight: bold;
+      color: white;
+    }
+
+    .title-header {
+      text-transform: uppercase;
+      text-align: center;
+      color: #042354;
+    }
+
+    .logo-img {
+      width: 150px;
+      height: auto;
+    }
+
+    .layout-table {
+      width: 100%;
+      border: none;
+      border-collapse: collapse;
+      margin: 16px 0px;
+    }
+
+    .layout-table td {
+      border: none;
+      padding: 0;
+      vertical-align: top;
+    }
+
+    .data-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+
+    .data-table td {
+      border: 1px solid black;
+      padding: 4px 8px;
+      font-size: 10pt;
+    }
+
+    .label-cell {
+      background-color: #042354;
+      color: white;
+      font-weight: bold;
+      width: 30%;
+    }
+
+    .value-cell {
+      background-color: white;
+      color: black;
+      text-align: center;
+    }
+
+    .color-fractal-yellow {
+      color: #F7D334;
+    }
+
+    .activity-text {
+      white-space: pre-wrap;
+    }
+
+    /* Nueva clase para igualar anchura de columnas específicas */
+    .col-shared-width {
+      width: 25%;
+    }
+  </style>
+</head>
+
+<body>
+
+  <table style="width: 100%; margin-bottom: 20px;">
+    <tr>
+      <td style="width: 50%; vertical-align: top;">
+        <img src="logo-fractal.jpg" class="logo-img" alt="Logo Fractal" />
+      </td>
+    </tr>
+    <tr>
+      <td>
+        <h2 class="title-header">INFORME DE ACTIVIDADES DE SERVICIO BODYSHOPING</h2>
+      </td>
+    </tr>
+  </table>
+
+  <table class="layout-table">
+    <tr>
+      <td style="width: 40%;">
+        <table class="data-table">
+          <tr>
+            <td class="label-cell">Empresa</td>
+            <td class="value-cell" th:text="${report.company}">Fractal</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border:none; height: 5px;"></td>
+          </tr>
+          <tr>
+            <td class="label-cell">Colaborador</td>
+            <td class="value-cell" th:text="${report.collaborator}">Name</td>
+          </tr>
+        </table>
+      </td>
+
+      <td style="width: 20%;"></td>
+
+      <td style="width: 40%;">
+        <table class="data-table">
+          <tr>
+            <td class="label-cell">Período</td>
+            <td class="value-cell" th:text="${report.emissionDate}">Oct-25</td>
+          </tr>
+          <tr>
+            <td colspan="2" style="border:none; height: 5px;"></td>
+          </tr>
+          <tr>
+            <td class="label-cell">Perfil</td>
+            <td class="value-cell" th:text="${report.profile}">Dev Senior</td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+
+  <table class="main-table">
+    <thead class="header-bg">
+      <tr class="color-fractal-yellow">
+        <th>Ticket</th>
+        <th>OC/OS</th>
+        <th>Periodo</th>
+        <th>Nº Iniciativa</th>
+        <th class="col-shared-width">Actividades realizadas</th>
+        <th class="col-shared-width">Detalle Entregable</th>
+        <th>Gerente</th>
+        <th>Gerencia</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr th:each="item : ${report.details}">
+        <td th:text="${item.ticket}"></td>
+        <td th:text="${item.os}"></td>
+        <td th:text="${item.activityPeriod}"></td>
+        <td th:text="${item.initiativeNumber}"></td>
+
+        <td>
+          <span class="activity-text" th:text="${item.activities}"></span>
+        </td>
+
+        <td th:text="${item.deliverable}"></td>
+        <td th:text="${item.manager}"></td>
+        <td th:text="${item.management}"></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <table style="width: 100%; margin-top: 16px; text-align: center;">
+    <tr style="margin: 0 auto;">
+      <td><img src="manager-signature.jpg" style="width: 150px; height: 58px;" alt="Firma gerente" /></td>
+    </tr>
+    <tr>
+      <td>
+        <hr style="width: 25%;" />
+      </td>
+    </tr>
+    <tr>
+      <td><span style="font-weight: bold;">Hugo Rodríguez Castillo</span></td>
+    </tr>
+    <tr>
+      <td>Subgerente de operaciones</td>
+    </tr>
+  </table>
+
+</body>
+
+</html>

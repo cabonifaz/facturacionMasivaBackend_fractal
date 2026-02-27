@@ -31,3 +31,9 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### Junie AI #3
+.junie
+
+# .env
+*.env
