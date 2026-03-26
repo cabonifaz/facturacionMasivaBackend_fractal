@@ -25,6 +25,7 @@ import org.springframework.http.HttpMethod;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import org.springframework.web.client.HttpStatusCodeException;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -147,13 +148,12 @@ public class BsaleApiAdapter {
         "Error al descargar el PDF: Archivo vacío o error de conexión tras múltiples intentos.", null);
   }
 
-  public BsaleInvoiceResponseDTO createExternalInvoice(@NonNull InvoiceHeader request) {
+  public BsaleInvoiceResponseDTO createExternalInvoice(@NonNull Map<String, Object> jsonBody) {
 
     HttpHeaders headers = new HttpHeaders();
     headers.set("access_token", this.bsaleToken);
     headers.setContentType(MediaType.APPLICATION_JSON);
 
-    Map<String, Object> jsonBody = mapToBsaleStructure(request);
     HttpEntity<Map<String, Object>> entity = new HttpEntity<>(jsonBody, headers);
 
     StringBuilder sBuilder = new StringBuilder();
@@ -176,6 +176,10 @@ public class BsaleApiAdapter {
       this.logger.error("Error creating invoice. Status: {}", response.getStatusCode());
       throw new SystemAPIException("Bsale API ha fallado codigo HTTP: " + response.getStatusCode(), null);
 
+    } catch (HttpStatusCodeException e) {
+      this.logger.error("Bsale API error. Status: {} Body: {}", e.getStatusCode(), e.getResponseBodyAsString());
+      throw new SystemAPIException(
+          "Bsale HTTP " + e.getStatusCode().value() + ": " + e.getResponseBodyAsString(), e);
     } catch (RestClientException e) {
       this.logger.error("Communication error with Bsale API", e);
       throw new SystemAPIException("Error al comunicarse con Bsale", e);

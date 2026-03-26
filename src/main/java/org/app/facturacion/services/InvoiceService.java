@@ -16,6 +16,7 @@ import org.app.facturacion.application.utilities.ZipSysHelper;
 import org.app.facturacion.domain.exceptions.SystemAPIException;
 import org.app.facturacion.domain.exceptions.ValidationAPIException;
 import org.app.facturacion.domain.models.BaseAPIResponse;
+import org.app.facturacion.domain.models.BsaleCallTrace;
 import org.app.facturacion.domain.models.FileModelDTO;
 import org.app.facturacion.domain.models.InvoiceHeader;
 import org.app.facturacion.domain.models.InvoiceRow;
@@ -129,12 +130,14 @@ public class InvoiceService {
     this.logger.info("Pending invoices: {}", invoices.size());
 
     List<@NonNull InvoiceHeader> successfulInvoices = new ArrayList<>();
+    List<BsaleCallTrace> bsaleTraces = new ArrayList<>();
 
     for (var invoice : invoices) {
+      var input = bsaleApiAdapter.mapToBsaleStructure(invoice);
       try {
 
         this.logger.info("Invoice for-> OS/OC: {} and NI: {}", invoice.getObservation(), invoice.getIncomingNumber());
-        var response = bsaleApiAdapter.createExternalInvoice(invoice);
+        var response = bsaleApiAdapter.createExternalInvoice(input);
 
         if (response != null && response.getId() != null) {
 
@@ -151,9 +154,12 @@ public class InvoiceService {
 
         }
 
+        bsaleTraces.add(BsaleCallTrace.builder().input(input).output(response).build());
+
       } catch (Exception e) {
         this.logger.error("Error processing Invoice ID " + invoice.getHistoryId() +
             ": " + e.getMessage());
+        bsaleTraces.add(BsaleCallTrace.builder().input(input).output(e.getMessage()).build());
       }
     }
 
@@ -167,9 +173,10 @@ public class InvoiceService {
       this.sendFullReport(workload, successfulInvoices, message);
     }, taskExecutor);
 
-    return BaseAPIResponse.success(
+    return BaseAPIResponse.successWithTrace(
         "Facturas generadas existosamente, se enviará un email de confirmación en unos minutos",
-        message);
+        message,
+        bsaleTraces);
   }
 
   @SuppressWarnings("null")
