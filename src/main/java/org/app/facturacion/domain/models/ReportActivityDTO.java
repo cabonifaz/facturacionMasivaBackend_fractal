@@ -22,6 +22,7 @@ public class ReportActivityDTO {
   public static class ReportDetails {
     private String ticket;
     private String os;
+    private String vigencia;
     private String activityPeriod;
     private String initiativeNumber;
     private String activities;

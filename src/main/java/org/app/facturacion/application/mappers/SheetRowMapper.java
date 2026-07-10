@@ -1,10 +1,12 @@
 package org.app.facturacion.application.mappers;
 
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
 import org.apache.poi.ss.usermodel.Cell;
 import org.apache.poi.ss.usermodel.CellType;
+import org.apache.poi.ss.usermodel.DateUtil;
 import org.apache.poi.ss.usermodel.Row;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.app.facturacion.domain.models.InvoiceRow;
@@ -85,6 +87,15 @@ public class SheetRowMapper {
     return cell.getCellType() == CellType.NUMERIC ? cell.getNumericCellValue() : Double.valueOf(cell.toString());
   }
 
+  private String getCellDateFormatted(Cell cell) {
+    if (cell == null)
+      return null;
+    if (cell.getCellType() == CellType.NUMERIC && DateUtil.isCellDateFormatted(cell)) {
+      return cell.getLocalDateTimeCellValue().format(DateTimeFormatter.ofPattern("dd/MM/yyyy"));
+    }
+    return getCellString(cell);
+  }
+
   private Integer getCellInteger(Cell cell) {
     if (cell == null)
       return null;
@@ -102,27 +113,28 @@ public class SheetRowMapper {
       if (row == null)
         continue;
 
-      // 2. Validación de Fila Vacía
-      if (isCellEmpty(row.getCell(this.clientNameCol)))
+      // The activity-report format starts with the row number, followed by Provider.
+      // Treat rows without a provider as empty so a missing sequence number does not
+      // discard otherwise valid report data.
+      if (isCellEmpty(row.getCell(1)))
         continue;
 
       var dataBuilder = ActivityReportRow.builder();
 
       try {
-        dataBuilder.provider(getCellString(row.getCell(0)));
-        dataBuilder.pucharseOrder(getCellString(row.getCell(1)));
+        // # | Proveedor | N° OC/OS | Número y nombre de Iniciativa |
+        // Detalle de actividades realizadas | Periodo actividades realizadas |
+        // Detalle de Entregable | Nombre de recurso asignado |
+        // Lider Técnico Asociado
+        dataBuilder.pucharseOrder(getCellString(row.getCell(0)));
+        dataBuilder.provider(getCellString(row.getCell(1)));
         dataBuilder.ocOs(getCellString(row.getCell(2)));
         dataBuilder.initiativeId(getCellString(row.getCell(3)));
-        dataBuilder.resourceName(getCellString(row.getCell(4)));
-        dataBuilder.resourceProfile(getCellString(row.getCell(5)));
-        dataBuilder.servicePeriod(getCellString(row.getCell(6)));
-        dataBuilder.activities(getCellString(row.getCell(7)));
-        dataBuilder.activitiesDetails(getCellString(row.getCell(8)));
-        dataBuilder.manager(getCellString(row.getCell(9)));
-        dataBuilder.managment(getCellString(row.getCell(10)));
-        dataBuilder.feedback(getCellString(row.getCell(11)));
-        dataBuilder.incommingNote(getCellInteger(row.getCell(12)));
-        dataBuilder.invoiceSerial(getCellString(row.getCell(13)));
+        dataBuilder.activities(getCellString(row.getCell(4)));
+        dataBuilder.servicePeriod(getCellDateFormatted(row.getCell(5)));
+        dataBuilder.activitiesDetails(getCellString(row.getCell(6)));
+        dataBuilder.resourceName(getCellString(row.getCell(7)));
+        dataBuilder.manager(getCellString(row.getCell(8)));
 
         var data = dataBuilder.build();
         rows.add(data);

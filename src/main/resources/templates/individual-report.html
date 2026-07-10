@@ -1,149 +1,204 @@
 <!DOCTYPE html>
 <html xmlns:th="http://www.thymeleaf.org">
-
 <head>
+  <meta charset="UTF-8" />
   <style>
     @page {
       size: A4 landscape;
-      margin: 1cm;
+      margin: 10mm 12mm 10mm 12mm;
     }
+
+    * { box-sizing: border-box; }
 
     body {
-      font-family: Arial;
-      font-size: 10pt;
+      margin: 0;
+      color: #111;
+      font-family: Arial, sans-serif;
+      font-size: 9pt;
     }
 
-    /* Estilos generales */
-    .header-table,
-    .main-table {
+    table { border-spacing: 0; }
+
+    .report-header {
       width: 100%;
+      height: 52px;
+      margin: 0 0 10px 0;
       border-collapse: collapse;
-      margin-bottom: 20px;
     }
 
-    .main-table th,
-    .main-table td {
-      border: 1px solid black;
-      padding: 5px;
-      vertical-align: top;
-    }
+    .report-header td { padding: 0; vertical-align: middle; }
 
-    .header-bg {
-      background-color: #042354;
-      font-weight: bold;
-      color: white;
-    }
-
-    .title-header {
-      text-transform: uppercase;
-      text-align: center;
-      color: #042354;
-    }
+    .logo-cell { width: 24%; }
 
     .logo-img {
-      width: 150px;
+      display: block;
+      width: 112px;
       height: auto;
     }
 
-    .layout-table {
-      width: 100%;
-      border: none;
-      border-collapse: collapse;
-      margin: 16px 0px;
+    .report-title {
+      margin: 0;
+      color: #082b5c;
+      font-size: 14pt;
+      font-weight: 700;
+      line-height: 18pt;
+      text-align: left;
+      text-transform: uppercase;
+      white-space: nowrap;
     }
 
-    .layout-table td {
-      border: none;
-      padding: 0;
-      vertical-align: top;
+    .metadata {
+      width: 94%;
+      margin: 0 auto 13px auto;
+      border-collapse: collapse;
+      table-layout: fixed;
     }
+
+    .metadata td { padding: 0; vertical-align: top; }
+    .metadata .block { width: 19%; }
+    .metadata .spacer { width: 54%; }
 
     .data-table {
       width: 100%;
-      border-collapse: collapse;
+      border-collapse: separate;
+      border-spacing: 0 7px;
+      table-layout: fixed;
     }
 
     .data-table td {
-      border: 1px solid black;
-      padding: 4px 8px;
-      font-size: 10pt;
+      height: 18px;
+      padding: 2px 5px;
+      border: 0.7pt solid #222;
+      font-size: 8.5pt;
+      line-height: 11pt;
     }
 
-    .label-cell {
-      background-color: #042354;
-      color: white;
-      font-weight: bold;
-      width: 30%;
+    .data-table .label-cell {
+      width: 48%;
+      border-right: 0;
+      background: #082b5c;
+      color: #fff;
+      font-weight: 700;
+      text-align: left;
     }
 
-    .value-cell {
-      background-color: white;
-      color: black;
+    .data-table .value-cell {
+      width: 52%;
+      background: #fff;
+      color: #082b5c;
+      text-align: center;
+      white-space: nowrap;
+    }
+
+    .main-table {
+      width: 94%;
+      margin: 0 auto;
+      border-collapse: collapse;
+      table-layout: fixed;
+    }
+
+    .main-table col.oc       { width: 9%; }
+    .main-table col.period   { width: 9.5%; }
+    .main-table col.project  { width: 14.5%; }
+    .main-table col.activity { width: 32.5%; }
+    .main-table col.delivery { width: 23%; }
+    .main-table col.leader   { width: 11.5%; }
+
+    .main-table th {
+      height: 34px;
+      padding: 4px 5px;
+      border: 0.6pt solid #aaa;
+      background: #082b5c;
+      color: #f7d334;
+      font-size: 8.5pt;
+      font-weight: 700;
+      line-height: 12pt;
+      text-align: center;
+      vertical-align: middle;
+    }
+
+    .main-table td {
+      height: 190px;
+      padding: 5px 3px;
+      border: 0.6pt solid #aaa;
+      background: #fff;
+      font-size: 8.5pt;
+      line-height: 16pt;
+      vertical-align: middle;
+    }
+
+    .center-cell { text-align: center; }
+    .nowrap { white-space: nowrap; }
+    .multiline { white-space: pre-wrap; }
+
+    .signature-table {
+      width: 100%;
+      margin-top: 10px;
+      border-collapse: collapse;
       text-align: center;
     }
 
-    .color-fractal-yellow {
-      color: #F7D334;
+    .signature-table td { padding: 0; }
+
+    .signature-img {
+      display: block;
+      width: 76px;
+      height: 30px;
+      margin: 0 auto;
+      object-fit: contain;
     }
 
-    .activity-text {
-      white-space: pre-wrap;
+    .signature-line {
+      width: 170px;
+      margin: 0 auto 6px auto;
+      border-top: 0.7pt dashed #222;
     }
 
-    /* Nueva clase para igualar anchura de columnas específicas */
-    .col-shared-width {
-      width: 25%;
+    .signature-name {
+      font-size: 9pt;
+      font-weight: 700;
+      line-height: 13pt;
     }
+
+    .signature-role { font-size: 9pt; line-height: 13pt; }
   </style>
 </head>
-
 <body>
-
-  <table style="width: 100%; margin-bottom: 20px;">
+  <table class="report-header">
     <tr>
-      <td style="width: 50%; vertical-align: top;">
+      <td class="logo-cell">
         <img src="logo-fractal.jpg" class="logo-img" alt="Logo Fractal" />
       </td>
-    </tr>
-    <tr>
       <td>
-        <h2 class="title-header">INFORME DE ACTIVIDADES DE SERVICIO BODYSHOPING</h2>
+        <h1 class="report-title">INFORME DE ACTIVIDADES DE SERVICIO BODYSHOPING</h1>
       </td>
     </tr>
   </table>
 
-  <table class="layout-table">
+  <table class="metadata">
     <tr>
-      <td style="width: 40%;">
+      <td class="block">
         <table class="data-table">
           <tr>
             <td class="label-cell">Empresa</td>
-            <td class="value-cell" th:text="${report.company}">Fractal</td>
+            <td class="value-cell" th:text="${report.company}">CELER SAC</td>
           </tr>
           <tr>
-            <td colspan="2" style="border:none; height: 5px;"></td>
-          </tr>
-          <tr>
-            <td class="label-cell">Colaborador</td>
-            <td class="value-cell" th:text="${report.collaborator}">Name</td>
+            <td class="label-cell">Emisión</td>
+            <td class="value-cell" th:text="${report.emissionDate}">May-2026</td>
           </tr>
         </table>
       </td>
-
-      <td style="width: 20%;"></td>
-
-      <td style="width: 40%;">
+      <td class="spacer"></td>
+      <td class="block">
         <table class="data-table">
           <tr>
-            <td class="label-cell">Período</td>
-            <td class="value-cell" th:text="${report.emissionDate}">Oct-25</td>
-          </tr>
-          <tr>
-            <td colspan="2" style="border:none; height: 5px;"></td>
+            <td class="label-cell">Colaborador</td>
+            <td class="value-cell" th:text="${report.collaborator}">Alan Alexis Castro Valdez</td>
           </tr>
           <tr>
             <td class="label-cell">Perfil</td>
-            <td class="value-cell" th:text="${report.profile}">Dev Senior</td>
+            <td class="value-cell" th:text="${report.profile}">Analista QA Senior</td>
           </tr>
         </table>
       </td>
@@ -151,53 +206,41 @@
   </table>
 
   <table class="main-table">
-    <thead class="header-bg">
-      <tr class="color-fractal-yellow">
-        <th>Ticket</th>
+    <colgroup>
+      <col class="oc" />
+      <col class="period" />
+      <col class="project" />
+      <col class="activity" />
+      <col class="delivery" />
+      <col class="leader" />
+    </colgroup>
+    <thead>
+      <tr>
         <th>OC/OS</th>
-        <th>Periodo</th>
-        <th>Nº Iniciativa</th>
-        <th class="col-shared-width">Actividades realizadas</th>
-        <th class="col-shared-width">Detalle Entregable</th>
-        <th>Gerente</th>
-        <th>Gerencia</th>
+        <th>Periodo de<br />actividades</th>
+        <th>Iniciativa</th>
+        <th>Actividades realizadas</th>
+        <th>Detalle de Entregable</th>
+        <th>Líder Técnico</th>
       </tr>
     </thead>
     <tbody>
       <tr th:each="item : ${report.details}">
-        <td th:text="${item.ticket}"></td>
-        <td th:text="${item.os}"></td>
-        <td th:text="${item.activityPeriod}"></td>
-        <td th:text="${item.initiativeNumber}"></td>
-
-        <td>
-          <span class="activity-text" th:text="${item.activities}"></span>
-        </td>
-
-        <td th:text="${item.deliverable}"></td>
-        <td th:text="${item.manager}"></td>
-        <td th:text="${item.management}"></td>
+        <td class="center-cell nowrap" th:text="${item.os}">OC 29535</td>
+        <td class="center-cell nowrap" th:text="${item.activityPeriod}">30/04/2026</td>
+        <td class="center-cell multiline" th:text="${item.initiativeNumber}">Iniciativa</td>
+        <td><span class="multiline" th:text="${item.activities}">Actividades realizadas</span></td>
+        <td><span class="multiline" th:text="${item.deliverable}">Detalle de Entregable</span></td>
+        <td class="center-cell" th:text="${item.manager}">Líder Técnico</td>
       </tr>
     </tbody>
   </table>
 
-  <table style="width: 100%; margin-top: 16px; text-align: center;">
-    <tr style="margin: 0 auto;">
-      <td><img src="manager-signature.jpg" style="width: 150px; height: 58px;" alt="Firma gerente" /></td>
-    </tr>
-    <tr>
-      <td>
-        <hr style="width: 25%;" />
-      </td>
-    </tr>
-    <tr>
-      <td><span style="font-weight: bold;">Hugo Rodríguez Castillo</span></td>
-    </tr>
-    <tr>
-      <td>Subgerente de operaciones</td>
-    </tr>
+  <table class="signature-table">
+    <tr><td><img src="manager-signature.jpg" class="signature-img" alt="Firma gerente" /></td></tr>
+    <tr><td><div class="signature-line"></div></td></tr>
+    <tr><td class="signature-name">Hugo Rodríguez Castillo</td></tr>
+    <tr><td class="signature-role">Subgerente de operaciones</td></tr>
   </table>
-
 </body>
-
 </html>

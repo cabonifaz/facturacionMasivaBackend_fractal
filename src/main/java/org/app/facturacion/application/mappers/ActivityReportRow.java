@@ -14,11 +14,9 @@ public class ActivityReportRow {
   private String resourceName;
   private String resourceProfile;
   private String servicePeriod;
+  private String vigencia;
   private String activities;
   private String activitiesDetails;
   private String manager;
   private String managment;
-  private String feedback;
-  private Integer incommingNote;
-  private String invoiceSerial;
 }

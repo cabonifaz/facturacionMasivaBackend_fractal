@@ -44,15 +44,13 @@ public class ReportService {
 
     this.logger.info("Lines read: {}", rows.size());
 
-    record GroupingKey(Integer incommingNote, String ocOs, String invoiceSerial, String collaborator) {
+    record GroupingKey(String ocOs, String collaborator) {
     }
 
     @SuppressWarnings("null")
     Map<GroupingKey, List<ActivityReportRow>> groupedData = rows.stream()
         .collect(Collectors.groupingBy(row -> new GroupingKey(
-            row.getIncommingNote(),
             row.getOcOs(),
-            row.getInvoiceSerial(),
             row.getResourceName())));
 
     this.logger.info("Groups {} found", groupedData.size());
@@ -65,7 +63,7 @@ public class ReportService {
 
       if (uniquePeople > 1) {
         logger.error("Alert! {} group contains {} differente collaborators: {}",
-            key.invoiceSerial(),
+            key.ocOs(),
             uniquePeople,
             rowsInGroup.stream().map(ActivityReportRow::getResourceName).collect(Collectors.toSet()));
         throw new ValidationAPIException("Se indentifico un reporte de actividades con 2 colaboradores diferentes");
@@ -146,7 +144,7 @@ public class ReportService {
     dto.setProfile(first.getResourceProfile());
 
     // Get current Date
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-dd", new Locale("es", "ES"));
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM-yyyy", new Locale("es", "ES"));
     String raw = LocalDate.now().format(formatter);
     String emissionDate = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
 
@@ -159,19 +157,15 @@ public class ReportService {
 
       detail.setTicket(row.getPucharseOrder());
       detail.setOs(row.getOcOs());
+      detail.setVigencia(row.getVigencia());
       detail.setActivityPeriod(row.getServicePeriod());
 
-      String cleanId = row.getInitiativeId() != null
-          ? row.getInitiativeId().replaceAll("\\.0+$", "")
-          : null;
-
-      detail.setInitiativeNumber(cleanId);
+      // The new spreadsheet already supplies the complete initiative number and
+      // name in one cell, so preserve it exactly as entered.
+      detail.setInitiativeNumber(row.getInitiativeId());
       detail.setActivities(row.getActivities());
 
       detail.setDeliverable(row.getActivitiesDetails());
-      detail.setIncomingNote(String.valueOf(row.getIncommingNote()));
-      detail.setInvoice(row.getInvoiceSerial());
-      detail.setFeedback(row.getFeedback());
       detail.setManagement(row.getManagment());
       detail.setManager(row.getManager());
 
