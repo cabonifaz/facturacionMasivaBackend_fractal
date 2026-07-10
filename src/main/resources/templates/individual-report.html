@@ -55,8 +55,9 @@
     }
 
     .metadata td { padding: 0; vertical-align: top; }
-    .metadata .block { width: 19%; }
-    .metadata .spacer { width: 54%; }
+    .metadata .left-block { width: 19%; }
+    .metadata .spacer { width: 46%; }
+    .metadata .right-block { width: 35%; }
 
     .data-table {
       width: 100%;
@@ -89,6 +90,9 @@
       text-align: center;
       white-space: nowrap;
     }
+
+    .person-data .label-cell { width: 26%; }
+    .person-data .value-cell { width: 74%; }
 
     .main-table {
       width: 94%;
@@ -124,10 +128,12 @@
       background: #fff;
       font-size: 8.5pt;
       line-height: 16pt;
+      text-align: center;
       vertical-align: middle;
     }
 
     .center-cell { text-align: center; }
+    .main-table td.left-cell { text-align: left; }
     .nowrap { white-space: nowrap; }
     .multiline { white-space: pre-wrap; }
 
@@ -177,7 +183,7 @@
 
   <table class="metadata">
     <tr>
-      <td class="block">
+      <td class="left-block">
         <table class="data-table">
           <tr>
             <td class="label-cell">Empresa</td>
@@ -190,8 +196,8 @@
         </table>
       </td>
       <td class="spacer"></td>
-      <td class="block">
-        <table class="data-table">
+      <td class="right-block">
+        <table class="data-table person-data">
           <tr>
             <td class="label-cell">Colaborador</td>
             <td class="value-cell" th:text="${report.collaborator}">Alan Alexis Castro Valdez</td>
@@ -229,8 +235,8 @@
         <td class="center-cell nowrap" th:text="${item.os}">OC 29535</td>
         <td class="center-cell nowrap" th:text="${item.activityPeriod}">30/04/2026</td>
         <td class="center-cell multiline" th:text="${item.initiativeNumber}">Iniciativa</td>
-        <td><span class="multiline" th:text="${item.activities}">Actividades realizadas</span></td>
-        <td><span class="multiline" th:text="${item.deliverable}">Detalle de Entregable</span></td>
+        <td class="left-cell"><span class="multiline" th:text="${item.activities}">Actividades realizadas</span></td>
+        <td class="left-cell"><span class="multiline" th:text="${item.deliverable}">Detalle de Entregable</span></td>
         <td class="center-cell" th:text="${item.manager}">Líder Técnico</td>
       </tr>
     </tbody>

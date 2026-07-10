@@ -144,7 +144,7 @@ public class ReportService {
     dto.setProfile(first.getResourceProfile());
 
     // Get current Date
-    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMMM-yyyy", new Locale("es", "ES"));
+    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("MMM-yyyy", Locale.ENGLISH);
     String raw = LocalDate.now().format(formatter);
     String emissionDate = Character.toUpperCase(raw.charAt(0)) + raw.substring(1);
 

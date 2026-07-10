@@ -125,7 +125,7 @@ public class SheetRowMapper {
         // # | Proveedor | N° OC/OS | Número y nombre de Iniciativa |
         // Detalle de actividades realizadas | Periodo actividades realizadas |
         // Detalle de Entregable | Nombre de recurso asignado |
-        // Lider Técnico Asociado
+        // Lider Técnico Asociado | Perfil
         dataBuilder.pucharseOrder(getCellString(row.getCell(0)));
         dataBuilder.provider(getCellString(row.getCell(1)));
         dataBuilder.ocOs(getCellString(row.getCell(2)));
@@ -135,6 +135,7 @@ public class SheetRowMapper {
         dataBuilder.activitiesDetails(getCellString(row.getCell(6)));
         dataBuilder.resourceName(getCellString(row.getCell(7)));
         dataBuilder.manager(getCellString(row.getCell(8)));
+        dataBuilder.resourceProfile(getCellString(row.getCell(9)));
 
         var data = dataBuilder.build();
         rows.add(data);
