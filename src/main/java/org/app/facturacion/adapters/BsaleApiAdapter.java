@@ -226,19 +226,18 @@ public class BsaleApiAdapter {
 
     List<Map<String, Object>> paymentsList = new ArrayList<>();
 
-    // --- APLICA DETRACCIÓN ---
-    BigDecimal detractionTax = new BigDecimal("0.12");
+    BigDecimal paymentTotal = source.getTotalToPay() != null
+        ? BigDecimal.valueOf(source.getTotalToPay()).setScale(2, RoundingMode.HALF_UP)
+        : totalFacturado;
 
-    // Calculamos monto detracción
-    BigDecimal detractionAmount = totalFacturado.multiply(detractionTax).setScale(2, RoundingMode.HALF_UP);
+    BigDecimal detractionAmount = source.getDetractionAmount() != null
+        ? BigDecimal.valueOf(source.getDetractionAmount()).setScale(2, RoundingMode.HALF_UP)
+        : paymentTotal.multiply(new BigDecimal("0.12")).setScale(2, RoundingMode.HALF_UP);
 
-    // Calculamos PRIMERA CUOTA (Total - Detracción)
-    BigDecimal firstDue = totalFacturado.subtract(detractionAmount);
-
-    // Pago 1: Lo que paga el cliente (Primera Cuota)
+    // Pago 1: cuota SUNAT. Debe calzar con el monto pendiente del documento.
     Map<String, Object> pagoPrincipal = new HashMap<>();
     pagoPrincipal.put("paymentTypeId", this.invoiceConfig.getPaymentTypes().getDue());
-    pagoPrincipal.put("amount", firstDue.doubleValue());
+    pagoPrincipal.put("amount", paymentTotal.doubleValue());
     pagoPrincipal.put("recordDate", expirationTimestamp);
     paymentsList.add(pagoPrincipal);
 
