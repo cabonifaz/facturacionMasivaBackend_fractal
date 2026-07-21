@@ -239,6 +239,9 @@ public class BsaleApiAdapter {
     pagoPrincipal.put("paymentTypeId", this.invoiceConfig.getPaymentTypes().getDue());
     pagoPrincipal.put("amount", paymentTotal.doubleValue());
     pagoPrincipal.put("recordDate", expirationTimestamp);
+    if (this.invoiceConfig.getSaleConditionId() != null) {
+      pagoPrincipal.put("salesConditionId", this.invoiceConfig.getSaleConditionId());
+    }
     paymentsList.add(pagoPrincipal);
 
     // Pago 2: La Detracción
