@@ -234,14 +234,13 @@ public class BsaleApiAdapter {
         ? BigDecimal.valueOf(source.getDetractionAmount()).setScale(2, RoundingMode.HALF_UP)
         : paymentTotal.multiply(new BigDecimal("0.12")).setScale(2, RoundingMode.HALF_UP);
 
-    // Pago 1: cuota SUNAT. Debe calzar con el monto pendiente del documento.
+    BigDecimal firstDue = paymentTotal.subtract(detractionAmount).setScale(2, RoundingMode.HALF_UP);
+
+    // Pago 1: cuota SUNAT. Bsale UI envia el credito como total menos detraccion.
     Map<String, Object> pagoPrincipal = new HashMap<>();
     pagoPrincipal.put("paymentTypeId", this.invoiceConfig.getPaymentTypes().getDue());
-    pagoPrincipal.put("amount", paymentTotal.doubleValue());
+    pagoPrincipal.put("amount", firstDue.doubleValue());
     pagoPrincipal.put("recordDate", expirationTimestamp);
-    if (this.invoiceConfig.getSaleConditionId() != null) {
-      pagoPrincipal.put("salesConditionId", this.invoiceConfig.getSaleConditionId());
-    }
     paymentsList.add(pagoPrincipal);
 
     // Pago 2: La Detracción

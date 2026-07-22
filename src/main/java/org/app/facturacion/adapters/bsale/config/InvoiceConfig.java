@@ -13,7 +13,6 @@ public class InvoiceConfig {
   private Integer documentTypeId;
   private Integer coinId;
   private Long taxId;
-  private Integer saleConditionId;
   private PaymentTypes paymentTypes = new PaymentTypes();
   private DetractionAttributes detraction = new DetractionAttributes();
   private Integer dynamicAttributeOcId;
