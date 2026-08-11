@@ -38,6 +38,8 @@ public class BsaleApiAdapter {
   private final InvoiceConfig invoiceConfig;
 
   private final String API_VERSION = "/v1";
+  private static final BigDecimal IGV_RATE = new BigDecimal("0.18");
+  private static final BigDecimal DEFAULT_DETRACTION_RATE = new BigDecimal("0.12");
 
   public BsaleApiAdapter(
       RestTemplate restTemplate,
@@ -200,20 +202,21 @@ public class BsaleApiAdapter {
     BigDecimal totalNeto = BigDecimal.ZERO;
 
     for (var d : source.getDetails()) {
-      // Lógica: (Precio * Cantidad) - Descuento
-      double discount = d.getDiscount() != null ? d.getDiscount() : 0.0;
-      BigDecimal rowNet = BigDecimal.valueOf(d.getAmountPerUnit())
+      BigDecimal netUnitValue = money(d.getAmountPerUnit());
+      BigDecimal discount = money(d.getDiscount());
+      BigDecimal rowNet = netUnitValue
           .multiply(BigDecimal.valueOf(d.getQuantity()))
-          .subtract(BigDecimal.valueOf(discount));
+          .subtract(discount)
+          .setScale(2, RoundingMode.HALF_UP);
 
       totalNeto = totalNeto.add(rowNet);
 
       // Crear el Map del detalle para Bsale
       Map<String, Object> detailMap = new HashMap<>();
-      detailMap.put("netUnitValue", d.getAmountPerUnit());
+      detailMap.put("netUnitValue", netUnitValue.doubleValue());
       detailMap.put("quantity", d.getQuantity());
       detailMap.put("comment", d.getConcept());
-      detailMap.put("discount", discount);
+      detailMap.put("discount", discount.doubleValue());
       detailMap.put("taxes", Collections.singletonList(
           Map.of("code", this.invoiceConfig.getTaxId(), "percentage", 18)));
 
@@ -221,20 +224,36 @@ public class BsaleApiAdapter {
     }
 
     // 3. CÁLCULO DE MONTOS (Lo que necesitas)
-    BigDecimal totalIgv = totalNeto.multiply(new BigDecimal("0.18"));
+    totalNeto = totalNeto.setScale(2, RoundingMode.HALF_UP);
+    BigDecimal totalIgv = totalNeto.multiply(IGV_RATE).setScale(2, RoundingMode.HALF_UP);
     BigDecimal totalFacturado = totalNeto.add(totalIgv).setScale(2, RoundingMode.HALF_UP);
 
     List<Map<String, Object>> paymentsList = new ArrayList<>();
 
     BigDecimal paymentTotal = source.getTotalToPay() != null
-        ? BigDecimal.valueOf(source.getTotalToPay()).setScale(2, RoundingMode.HALF_UP)
+        ? money(source.getTotalToPay())
         : totalFacturado;
 
     BigDecimal detractionAmount = source.getDetractionAmount() != null
-        ? BigDecimal.valueOf(source.getDetractionAmount()).setScale(2, RoundingMode.HALF_UP)
-        : paymentTotal.multiply(new BigDecimal("0.12")).setScale(2, RoundingMode.HALF_UP);
+        ? money(source.getDetractionAmount())
+        : paymentTotal.multiply(DEFAULT_DETRACTION_RATE).setScale(2, RoundingMode.HALF_UP);
 
     BigDecimal firstDue = paymentTotal.subtract(detractionAmount).setScale(2, RoundingMode.HALF_UP);
+    BigDecimal paymentCheck = firstDue.add(detractionAmount).setScale(2, RoundingMode.HALF_UP);
+
+    if (paymentCheck.compareTo(paymentTotal) != 0) {
+      throw new SystemAPIException("Montos de pago inconsistentes antes de enviar a Bsale", null);
+    }
+
+    if (totalFacturado.compareTo(paymentTotal) != 0) {
+      this.logger.warn(
+          "Invoice totals differ before Bsale. historyId={}, detailTotal={}, paymentTotal={}, net={}, igv={}",
+          source.getHistoryId(), totalFacturado, paymentTotal, totalNeto, totalIgv);
+    }
+
+    this.logger.info(
+        "Bsale invoice money check historyId={}, net={}, igv={}, total={}, detraction={}, due={}",
+        source.getHistoryId(), totalNeto, totalIgv, paymentTotal, detractionAmount, firstDue);
 
     // Pago 1: cuota SUNAT. Bsale UI envia el credito como total menos detraccion.
     Map<String, Object> pagoPrincipal = new HashMap<>();
@@ -317,5 +336,12 @@ public class BsaleApiAdapter {
     detail.put("description", detailAttrId);
     detail.put("detailAtributeContact", Collections.singletonList(Map.of("detailAtributeId", detailAttrId)));
     return detail;
+  }
+
+  private BigDecimal money(Double value) {
+    if (value == null) {
+      return BigDecimal.ZERO.setScale(2, RoundingMode.HALF_UP);
+    }
+    return BigDecimal.valueOf(value).setScale(2, RoundingMode.HALF_UP);
   }
 }
